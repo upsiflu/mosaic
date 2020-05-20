@@ -1,0 +1,19 @@
+#mosaic {
+    position: relative;
+    min-width: 100vw;
+    min-height: 100vh;
+    background: yellowgreen;
+}
+#mosaic #midpoint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+}
+
+.tile {
+    position: absolute;
+}
+
+.tile.passive {
+    background: grey;
+}

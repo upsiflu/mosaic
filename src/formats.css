@@ -1,0 +1,7 @@
+/* Formats that the user can choose in the editor. */
+
+
+
+.columns {
+    columns: 3 var(--min-copy-width);
+}
