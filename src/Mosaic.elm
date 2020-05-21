@@ -199,7 +199,7 @@ add_article s m =
             (Zip.insert_right
                 (Article.singleton s |> ArticleTile (m.tiles |> Zip.length) m.viewport |> Deselected)
             )
-        >> walk (R Here)
+        |> walk (R Here)
 
 
 
