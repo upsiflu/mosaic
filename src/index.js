@@ -156,7 +156,7 @@ var custom_editor = customElements.define('custom-editor',
 			this.reflectState();
 		}
 		
-		static get observedAttributes() { return ['release', 'caret', 'id', 'state']; }
+		static get observedAttributes() { return ['release', 'caret', 'id', 'state', 'format']; }
 
 		doCommand (command) {
 			console.log("DO",command)
@@ -200,6 +200,7 @@ var custom_editor = customElements.define('custom-editor',
 				break; case 'caret': this.doCommand(newVal);
 				break; case 'release': if(this.squire) this.squire.setHTML(newVal);
 				break; case 'id': if (oldVal) console.error ("What? Someone has edited the id of this editor. Au Secours!");
+				break; case 'format' : this.doCommand(newVal);
 			}
 		}
 

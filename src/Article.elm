@@ -6,7 +6,7 @@ module Article exposing
     , Caret
     , Draft
     , Format
-    , Msg
+    , Msg(..)
     , singleton
     , update
     , view
@@ -84,6 +84,7 @@ type Msg
     = DraftChanged Draft
     | CaretChanged Caret
     | FormatIssued Format
+    | GotTileMsg Tile.Message
 
 
 
@@ -102,12 +103,15 @@ update msg article =
             { article | caret = new }
 
         FormatIssued new ->
-            { article | format = new }
+            { article | format = new |> Debug.log "Format at Article" }
+
+        GotTileMsg m ->
+            article
 
 
 
 {-
-   TileMessage message ->
+   GotTileMessage message ->
        case ( message, article.editing ) of
            ( Tile.WalkedAway, True ) ->
                { article
