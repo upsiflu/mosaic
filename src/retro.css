@@ -11,9 +11,16 @@
   --button-face: #dfdfdf;
   --button-shadow: #808080;
   --window-frame: #0a0a0a;
-  --dialog-blue: #000080;
+  --dialog-blue: #100080;
   --dialog-blue-light: #1084d0;
   --link-blue: #0000ff;
+
+  --pressed-face: #100080;
+  --pressed-text: #30a4f0;
+  --pressed-shadow: #000060;
+  --pressed-highlight: #1064c0;
+  --pressed-light: #1000a0;
+
 
   /* Spacing */
   --element-spacing: 8px;
@@ -55,6 +62,12 @@
     inset 1px 1px var(--window-frame);
   --border-sunken-inner: inset -2px -2px var(--button-face),
     inset 2px 2px var(--button-shadow);
+
+
+  --border-pressed-outer: inset -1px -1px var(--pressed-highlight),
+  inset 1px 1px var(--window-frame);
+  --border-pressed-inner: inset -2px -2px var(--pressed-light),
+  inset 2px 2px var(--pressed-shadow);
 
   /* Window borders flip button-face and button-highlight */
   --border-window-outer: inset -1px -1px var(--window-frame),
@@ -133,8 +146,10 @@ button:after {
   box-shadow: var(--border-raised-outer), var(--border-raised-inner);
 }
 
-button:not(:disabled):active, button.on {
-  box-shadow: var(--border-sunken-outer), var(--border-sunken-inner);
+button:not(:disabled):active, button.on, [aria-pressed="true"],[aria-checked="true"] {
+  box-shadow: var(--border-pressed-outer), var(--border-pressed-inner);
+  background: var(--pressed-face);
+  color: var(--pressed-text);
 }
 
 

@@ -1,14 +1,12 @@
 module Main exposing (main)
 
-import Article
 import Browser
-import Debug
-import Example
 import Html exposing (..)
+import Html.Extra as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Mosaic exposing (Mosaic)
-import Ui
+import Example
 
 
 
@@ -21,7 +19,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \{ mosaic } -> Sub.map GotMosaicMsg (Mosaic.subscriptions mosaic)
+        , subscriptions = \mosaic -> Sub.map GotMosaicMsg (Mosaic.subscriptions mosaic)
         }
 
 
@@ -30,20 +28,18 @@ main =
 
 
 type alias Model =
-    { mosaic : Mosaic }
+    Mosaic
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { mosaic =
-            Mosaic.singleton
-                --|> Mosaic.addArticle Example.html
-                |> Mosaic.add_article "1"
-                |> Mosaic.add_article "2"
-                |> Mosaic.add_article "3"
-                |> Mosaic.add_article "4"
-                |> Mosaic.add_article "5"
-      }
+    ( Mosaic.singleton
+                --|> Mosaic.add_article Example.html
+                |> Mosaic.add_article "Article Number 1"
+                |> Mosaic.add_article "Article Number 2"
+                |> Mosaic.add_article "Article Number 3"
+                |> Mosaic.add_article "Article Number 4"
+                |> Mosaic.add_article "Article Number 5"
     , Cmd.none
     )
 
@@ -60,10 +56,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotMosaicMsg m ->
-            model.mosaic
+            model
                 |> Mosaic.update m
                 |> (\( mosaic, command ) ->
-                        ( { model | mosaic = mosaic }
+                        ( mosaic
                         , Cmd.map GotMosaicMsg command
                         )
                    )
@@ -78,9 +74,9 @@ view model =
     div []
         [ p []
             [ Html.text "Mosaic v0.0"
-            , model.mosaic
+            , model
                 |> Mosaic.view
-                |> Html.div [ class "mosaic" ]
+                |> Html.div ( class "mosaic" :: Mosaic.offset model )
                 |> Html.map GotMosaicMsg
 
             --,

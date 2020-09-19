@@ -23,6 +23,7 @@ module Zip exposing
     , length
     , map_focus
     , map_periphery
+    , map_at
     , path_to_int
     , path_to_string
     , reverse
@@ -134,8 +135,12 @@ map_periphery ab (Zip l c r) =
 
 indexed_map_periphery : (Int -> a -> b) -> Zip c a -> Zip c b
 indexed_map_periphery iab (Zip l c r) =
-    Zip (List.indexedMap (negate >> iab) l) c (List.indexedMap iab r)
+    Zip (List.indexedMap ((+) 1 >> negate >> iab) l) c ( List.indexedMap ((+) 1 >> iab) r)
 
+map_at : Int -> ( a -> a ) -> Zip c a -> Zip c a
+map_at path fu =
+    indexed_map_periphery
+        (\i -> if i == path then fu else identity)
 
 foldl : { focus : c -> b -> b, periphery : a -> b -> b } -> b -> Zip c a -> b
 foldl fu acc (Zip l c r) =

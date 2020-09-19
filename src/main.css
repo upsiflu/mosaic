@@ -20,9 +20,6 @@ align-items: flex-end; display: none;}
 
 .editor.toolbar, .sources {background: rgba(133, 133, 133, 0.2);}
 
-.toolbar {
-  margin-right: -100vw;
-}
 
 .toolbar button {
   min-width: 3rem;
@@ -55,7 +52,7 @@ custom-editor[active]:before {
 
 .toolbar {position: sticky; top: 0; height: 3rem;  display: block; z-index: 2;}
 .toolbar .paragraph-style {position: absolute; left: 0; max-height: 3rem; display: block; height: 3rem; 
-  width: 100vw; margin-right: -100vw; z-index: 2; /* to make it wide enough and accessible even when the text window is occluded or narrow */}
+  min-width: 3rem; z-index: 2; /* to make it wide enough and accessible even when the text window is occluded or narrow */}
 
 
 .editor-box {outline: 1px dashed rgba(0,0,0,.1); max-width:100vw; width:max-content; position: relative;padding-bottom:3.5rem;}

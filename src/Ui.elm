@@ -15,6 +15,7 @@ module Ui exposing
     , icon
     , placeholder
     ,  preview
+    , view
        -- map:
 
     , text
@@ -30,7 +31,7 @@ module Ui exposing
 -- For example, buttons must not contain interactive elements.
 
 import Html exposing (Html, br, div, h1, h2, h3, img, option, pre, select, span, strong, text)
-import Html.Attributes exposing (attribute, class, classList, id, src, title, value)
+import Html.Attributes exposing (class, classList, id, src, title, value)
 import Html.Attributes.Extra as Attributes
 import Html.Events exposing (onClick)
 import Html.Extra as Html
@@ -44,6 +45,14 @@ type Ui msg
     = Static (List (Html Never))
     | Active (List (Html msg))
 
+view : Ui msg -> Html msg
+view ui =
+    case ui of
+        Static list ->
+            List.map Html.static list |> div []
+        Active list ->
+            list |> div []
+
 
 type alias Overlay msg =
     List (Html msg)
@@ -52,6 +61,7 @@ type alias Overlay msg =
 placeholder : String -> Ui msg
 placeholder str =
     Static [ Html.span [ class "placeholder" ] [ Html.text str ] ]
+
 
 
 type alias Wrapper msg =
@@ -72,10 +82,10 @@ decorate_with : Overlay msg -> Ui msg -> Ui msg
 decorate_with overlay ui =
     case ui of
         Static contents ->
-            overlay ++ List.map Html.static contents |> Active
+             div [class "overlay"] overlay :: List.map Html.static contents |> Active
 
         Active contents ->
-            overlay ++ contents |> Active
+             div [class "overlay"] overlay :: contents |> Active
 
 
 

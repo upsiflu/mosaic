@@ -1,0 +1,116 @@
+[role="toolbar"] {
+    list-style: none;
+    display: flex;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    margin-top: -3rem;
+    left: 0;
+    position: sticky;
+}
+[role="toolbar"] button {
+    min-height: 3rem;
+    min-width: 1rem;
+}
+
+[role="toolbar"] label {
+    min-height: 3rem;
+    min-width: 1rem;
+    background: rgb(26, 26, 26);
+    border: 3px ridge rgb(36, 36, 36);
+    box-sizing: border-box;
+    color: silver;
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+    padding: .1rem;
+}
+
+
+
+
+
+/*
+.interactive
+  .label
+    .static (guaranteed to have no interactivity), for example .static.icon etc.
+    .preview
+      .T.b (text styles) or .h1 (paragraph styles)
+*/
+
+/* faces */
+
+.gui button:hover .face {
+    text-shadow: 2px 2px rgba(0,0,0,.1);
+    position: relative;
+    /* left: -1px; top: -1px; */
+}
+.gui button:hover:after { background: rgba(255,170,0,.2);}
+.gui button:focus .face {
+    outline: 1px dotted grey;
+}
+.gui .face .preview .T {
+    font-size: 1.8em;
+}
+
+
+
+
+.gui.info {
+    background: white;
+    display: inline-flex;
+    justify-content: center;
+    position: absolute;
+    bottom: -1rem; right: -1rem;
+    width: 2rem; height: 1.8rem;
+    align-items: center;
+    box-shadow: 0px 0px 3px rgba(0,0,0,.2);
+    background: rgba(55,55,55,.8); color: white;
+}
+
+.gui.info + .info { bottom: 1rem; }
+.gui.info + .info + .info { bottom: 3rem; }
+.gui.info + .info + .info + .info { bottom: 6rem; }
+
+.gui.info:last-of-type {border-top-left-radius: 1rem;border-top-right-radius: 1rem; padding-top: .2rem;}
+.gui.info:first-of-type {border-bottom-left-radius: 1rem;border-bottom-right-radius: 1rem; padding-bottom: .2rem;}
+
+
+
+
+
+
+
+
+
+
+.overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(100% - 0em);
+    height: calc(100% - 0em);
+}
+
+.tile { background: rgba(200,200,200,.2); padding: 1em;}
+
+.tile:hover { background: rgba(200,200,200,.3); 
+    outline: 1px dashed rgba(255,0,0,.9); outline-offset: .5rem; padding: 1em;}
+
+.mosaic { margin-left: 50vw;
+    margin-top: 50vh;
+position: absolute;}
+
+.gui.selected.pattern, .gui.focused.pattern {
+    --bg: rgba(0, 144, 216,.2);
+    --fg: rgba(0, 129, 255,.2);
+    background: 
+        linear-gradient(135deg, var(--bg) 25%, transparent 25%) -2.5px 0,
+        linear-gradient(225deg, var(--bg) 25%, transparent 25%) -2.5px 0,
+        linear-gradient(315deg, var(--bg) 25%, transparent 25%),
+        linear-gradient(45deg, var(--bg) 25%, transparent 25%),
+        linear-gradient(150deg, var(--fg) 15%, transparent 15%) -2.5px -2.5px,
+        linear-gradient(210deg, var(--fg) 15%, transparent 15%) -2.5px -2.5px,
+        linear-gradient(330deg, var(--fg) 15%, transparent 15%) 0px -2.5px,
+        linear-gradient(30deg, var(--fg) 15%, transparent 15%) 0px -2.5px;
+    background-size: 5px 5px;
+}

@@ -118,7 +118,6 @@ article button {
     custom-editor:not([active]) {
         background: silver;
     }
-    .editors-container > * { display: inline-block; max-width: 8rem !important; min-width: 8rem; overflow: visible; }
     .hint {position: absolute;}
 
 
@@ -285,6 +284,9 @@ i b, em b, i strong, em strong {
 
 
 
+
+
+
 /* UI elements */
 
 /*
@@ -292,82 +294,30 @@ i b, em b, i strong, em strong {
 
 */
 
-.icon {
+.gui .icon {
     font-size: 185%;
 }
-.icon .material-icons {
+.gui .icon .material-icons {
     vertical-align: middle;
     -webkit-font-smoothing:none;
 }
 
-
-
-
-
-
-/*
-.interactive
-  .label
-    .static (guaranteed to have no interactivity), for example .static.icon etc.
-    .preview
-      .T.b (text styles) or .h1 (paragraph styles)
-*/
-
-.interactive {
-    display: inline-flex;   /* buttons come next to each other, and their contents are aligned horizontally */
-    vertical-align: top;    /* have buttons in a row align along their top edges */
-    align-items: stretch;   /* have contents align visually */
-}
-
-
-/* faces */
-
-.interactive:hover > .face {
-    text-shadow: 2px 2px grey;
-    position: relative;
-    left: -1px; top: -1px;
-}
-.interactive:focus > .face {
-    outline: 1px dotted grey;
-}
-
-.interactive .face {
+.gui .face {
+    /* 
     background: silver;
     display: flex;
     align-content: stretch;
-    align-items: stretch;     /* have contents align visually */
-    flex-grow: 1;             /* can add some space here */
-    justify-content: center;  /* for short items. */
-
+    align-items: stretch;     
+    flex-grow: 1;             
+    justify-content: center;  
+ */
     font-family: 'Fira Sans', sans-serif;
     font-weight: bold;
     font-size: .8rem;
     letter-spacing: -.02em;
-
-    background: green;
-
-    min-height: 3rem;         /* toolbar height. */
 }
 
-.interactiv .face .preview, .interactive .face .icon {
-    background: yellow;
 
-}
-
-.interactive .face .preview {
-    background: rgba(255,0,0,.8);
-    align-items: baseline;
-    display: flex;
-}
-.interactive .face .preview > * {
-    background: rgba(255,255,20,.7);
-    vertical-align: bottom;
-    padding: 0 .2em;
-}
-
-.interactive .face .preview .T {
-    font-size: 1.8em;
-}
 
 
 

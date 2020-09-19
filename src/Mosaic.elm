@@ -6,19 +6,21 @@ module Mosaic exposing
     , singleton
     , subscriptions
     , update
-    , view
+    , view, offset
     , walk
     )
 
-import Article exposing (Article)
-import Draggable
-import Draggable.Events
-import Html exposing (Html, div)
-import Html.Attributes as Attributes exposing (class, id)
+--import Draggable
+--import Draggable.Events
+import Html exposing (Html)
+--import Html.Attributes as Attributes exposing (class, id)
 import Html.Events exposing (..)
-import Tile
-import Ui
+import Tile exposing ( Tile )
+--import Ui
 import Zip exposing (Path(..), Zip)
+import Gui exposing (Position, midpoint, Delta, zero)
+
+import Tile.General
 
 
 
@@ -45,23 +47,14 @@ type Mosaic
 
 
 type alias Arrangement =
-    { drag : Draggable.State Int
-    , delta : Position
+    { trace : Gui.DragTrace
     }
 
 
 type alias Composition =
-    { tiles : Zip (Focused Tile) (Peripheral Tile) -- The current tile (=layer), with peripheral layers above and below.
+    { tiles : Zip Tile (Peripheral Tile) -- The current tile (=layer), with peripheral layers above and below.
     , viewport : Position -- Vector from the mosaic modpoint to the intended midpoint of the screen.
     }
-
-
-type Tile
-    = ArticleTile Int Position Article
-      --| LayoutTile Position Layout
-      --| EntranceTile Position String
-    | Trashcan Position
-    | Canvas
 
 
 type Peripheral a
@@ -69,26 +62,15 @@ type Peripheral a
     | Deselected a
 
 
-type Focused a
-    = Focused a
 
-
-type alias Position =
-    { x : Float
-    , y : Float
-    }
-
-
-type alias Layout =
-    Int
 
 
 singleton : Mosaic
 singleton =
     Editing
         { tiles =
-            Zip.singleton (Focused Canvas)
-                |> Zip.insert_right (Trashcan midpoint |> Deselected)
+            Zip.singleton Tile.Canvas
+                |> Zip.insert_right (Tile.Trashcan midpoint |> Deselected)
         , viewport = midpoint
         }
         |> arrange
@@ -99,51 +81,53 @@ arrange mosaic =
     case mosaic of
         Editing c ->
             Arranging
-                { drag = Draggable.init
-                , delta = midpoint
+                { trace = Gui.new_trace
                 }
                 c
 
         _ ->
             mosaic
 
-
 edit : Mosaic -> Mosaic
 edit mosaic =
     case mosaic of
-        Arranging a c ->
+        Arranging _ c ->
             Editing c
 
         _ ->
             mosaic
 
 
-all_tiles : Mosaic -> Zip (Focused Tile) (Peripheral Tile)
+all_tiles : Mosaic -> Zip Tile (Peripheral Tile)
 all_tiles mosaic =
     case mosaic of
-        Arranging c { tiles } ->
+        Arranging _ { tiles } ->
             tiles
 
         Editing { tiles } ->
             tiles
 
-
-midpoint : Position
-midpoint =
-    Position 0 0
+trace :  Mosaic -> Maybe Gui.DragTrace
+trace mosaic =
+    case mosaic of
+        Editing _ -> Nothing
+        Arranging a _ -> Just a.trace
 
 
 type Msg
     = EnterEditingMode
     | AddEditor
     | Walk Zip.Path
-      -- Articles
-    | GotArticleMsg Int Article.Msg
-      -- Drag and Drop
-    | DragStarted
-    | DraggedBy Draggable.Delta
-    | Dragged (Draggable.Msg Int)
+      -- Focus and Selection
+    | AlsoSelect Zip.IntPath
+    | Deselect Zip.IntPath
+    | AssertFocus
+      -- Tile Data
+    | GotTileMsg Tile.Msg
     | Released
+      -- Drag and Drop
+    | Drag (Gui.DragTrace)
+    | Settle (Gui.DragTrace)
 
 
 update : Msg -> Mosaic -> ( Mosaic, Cmd Msg )
@@ -162,65 +146,72 @@ update msg mosaic =
                 |> noop
 
         ( Walk path, _ ) ->
-            walk path mosaic
+            mosaic
+                |> map_tiles ( Zip.map_periphery deselect )
+                |> walk (Debug.log "Walk" path) 
+                |> noop
+
+        ( Deselect path, _ ) ->
+            map_tiles ( Zip.map_at path deselect ) mosaic
+                |> (\x -> Debug.log "Deselect" "?" |> always x)
+                |> noop
+
+        ( AlsoSelect path, _) ->
+            map_tiles ( Zip.map_at path select ) mosaic
+                |> (\x -> Debug.log "AlsoSelect" "?" |> always x)
+                |> noop
+
+        ( AssertFocus, _ ) ->
+            mosaic
                 |> noop
 
         -- Delegating to individual tiles
-        ( GotArticleMsg key message, _ ) ->
-            let
-                delegate_update tile =
-                    case tile of
-                        ArticleTile id p a ->
-                            if id == key then
-                                ArticleTile id p (Article.update message a)
-
-                            else
-                                tile
-
-                        _ ->
-                            tile
-            in
+        ( GotTileMsg message, _ ) ->
             mosaic
-                |> map_each_tile delegate_update
+                |> map_each_tile ( Tile.update message )
                 |> noop
 
-        -- Drag and Drop
-        ( DragStarted, _ ) ->
-            noop mosaic
-
-        ( DraggedBy ( dx, dy ), Arranging a c ) ->
-            Arranging { a | delta = Position (a.delta.x + dx) (a.delta.y + dy) } c
-                |> noop
-
-        ( Dragged drag_msg, Arranging a c ) ->
-            let
-                ( arrangement, cmd ) =
-                    Draggable.update
-                        (Draggable.customConfig
-                            [ Draggable.Events.onDragBy DraggedBy
-                            , Draggable.Events.onDragEnd Released
-                            ]
-                        )
-                        drag_msg
-                        a
-            in
-            ( Arranging arrangement c, cmd )
 
         -- Data modified
         ( Released, _ ) ->
             noop mosaic
 
-        _ ->
-            noop mosaic
+        
+        -- Drag and Drop
+        ( Drag trc, Arranging a c ) ->
+            Arranging { a | trace = trc } c
+                |> noop
 
+        ( Settle trc, Arranging a c ) ->
+             manifest_delta { a | trace = if a.trace == trc then a.trace else Debug.log "Settle" (Gui.final_delta trc) |> always trc } c
+                |> noop
+
+        _ -> noop mosaic
+
+
+manifest_delta : Arrangement -> Composition -> Mosaic
+manifest_delta a c =
+    let bake_in = Gui.add_delta (Gui.final_delta a.trace)
+    in
+    Arranging
+        { a | trace = Gui.new_trace }
+        c    
+        |> map_each_selected_tile
+            (\tile ->
+                case tile of
+                    Tile.ArticleTile id position article ->
+                        Tile.ArticleTile id ( bake_in position ) article
+                    Tile.Trashcan position ->
+                        Tile.Trashcan ( bake_in position )
+                    _ -> tile
+                )
 
 add_article : String -> Mosaic -> Mosaic
-add_article s mosaic =
+add_article contents mosaic =
     mosaic
         |> map_tiles
             (Zip.insert_right
-                (Article.singleton s
-                    |> ArticleTile (size mosaic) midpoint
+                (Tile.article contents (size mosaic) ( Tile.midpoint |> Gui.add_delta {x = (size mosaic - 2) * 110, y = (size mosaic - 2) * 20})
                     |> Deselected
                 )
             )
@@ -230,7 +221,7 @@ add_article s mosaic =
 size : Mosaic -> Int
 size mosaic =
     case mosaic of
-        Arranging a c ->
+        Arranging _ c ->
             Zip.length c.tiles
 
         Editing c ->
@@ -238,10 +229,7 @@ size mosaic =
 
 
 
--- apply a function on the zip of the tiles
-
-
-map_tiles : (Zip (Focused Tile) (Peripheral Tile) -> Zip (Focused Tile) (Peripheral Tile)) -> Mosaic -> Mosaic
+map_tiles : ( Zip Tile (Peripheral Tile) -> Zip Tile (Peripheral Tile) ) -> Mosaic -> Mosaic
 map_tiles fu mosaic =
     case mosaic of
         Arranging a c ->
@@ -252,248 +240,235 @@ map_tiles fu mosaic =
 
 
 
--- apply a function on each tile in the mosaic, regardless of whether focused or not, and whether it's peripheral or not.
-
 
 map_each_tile : (Tile -> Tile) -> Mosaic -> Mosaic
 map_each_tile fu =
-    let
-        mapping s =
-            case s of
-                Selected a ->
-                    Selected (fu a)
-
-                Deselected a ->
-                    Deselected (fu a)
-    in
-    map_tiles
-        (Zip.map_periphery mapping
-            >> Zip.map_focus (leave >> mapping >> enter)
-        )
+    Zip.map_periphery ( map_peripheral fu ( True, True ) )
+        >> Zip.map_focus fu
+        |> map_tiles
 
 
+map_each_selected_tile : (Tile -> Tile) -> Mosaic -> Mosaic
+map_each_selected_tile fu =
+    Zip.map_periphery ( map_peripheral fu ( True, False ) )
+        >> Zip.map_focus fu
+        |> map_tiles
+        
 
--- map a function on each tile to
-
-
-map_peripheral : (Tile -> Tile) -> Peripheral Tile -> Peripheral Tile
-map_peripheral fu peripheral =
-    case peripheral of
-        Selected a ->
+map_peripheral : (Tile -> Tile) -> ( Bool, Bool ) -> Peripheral Tile -> Peripheral Tile
+map_peripheral fu (apply_to_selected, apply_to_deselected) peripheral =
+    case ( peripheral, apply_to_selected, apply_to_deselected) of
+        ( Selected a, True, _ ) ->
             Selected (fu a)
 
-        Deselected a ->
+        ( Deselected a, _, True ) ->
             Deselected (fu a)
 
-
-leave : Focused Tile -> Peripheral Tile
-leave (Focused tile) =
-    Selected tile
+        _ -> peripheral
 
 
-enter : Peripheral Tile -> Focused Tile
+leave : Tile -> Peripheral Tile
+leave = Selected
+
+
+enter : Peripheral Tile -> Tile
 enter selection =
     case selection of
         Selected tile ->
-            Focused tile
+            tile
 
         Deselected tile ->
-            Focused tile
+            tile
 
+deselect : Peripheral Tile -> Peripheral Tile
+deselect selection =
+    case selection of
+
+        Selected tile ->
+            Deselected tile
+        _ ->
+            selection
+
+select : Peripheral Tile -> Peripheral Tile
+select selection =
+    case selection of
+
+        Deselected tile ->
+            Selected tile
+
+        _ ->
+            selection
 
 mark : (Tile -> Tile) -> Mosaic -> Mosaic
 mark fu =
-    map_tiles (Zip.map_focus (leave >> map_peripheral fu >> enter))
+    map_tiles (Zip.map_focus fu)
 
 
 walk : Zip.Path -> Mosaic -> Mosaic
 walk path =
     map_tiles
-        (Zip.walk leave enter path)
-
-
-got : Tile.Message -> (Tile -> Tile)
-got message tile =
-    case tile of
-        ArticleTile id p a ->
-            ArticleTile id p (Article.update (Article.GotTileMsg message) a)
-
-        other ->
-            other
+        (Zip.walk ( leave >> deselect ) enter path)
 
 
 subscriptions : Mosaic -> Sub Msg
 subscriptions mosaic =
-    case mosaic of
-        Arranging a _ ->
-            Draggable.subscriptions Dragged a.drag
-
-        _ ->
             Sub.none
 
 
 
-{- For the inner layer:
+{- The following table lists all events that need to be implemented in the user interface.
+   Some are done. WIP.
 
-   (1) determine tile type (Article, Trash, Layout...)
-      (a) determine whether Article's appearance is Normal, Selected, or ( Editing GotArticleMsg id ).
-      (b) determine whether a Trashcan's appearance... etc.
+    WHAT        WHEN          WHERE               IF                                              DETAILS
 
+C   CLIPBOARD   ------------------------------------------------------------------------------  To Do.
 
-   - For the outer layer:
+C   CONTENTS
+    - Draw                    Contents                       Appearance : Normal | Selected | Interactive how_to_message
 
-   (1) Focus Ring?                            When Focused                            Focused
-   (2) Selection Controls?                    When not (Editing and Selected)         Static
-   (4) Position.                              always                                  -
-   (5) Delta?                                 When Arranging                          Arranging
+D   DELTA
+    * Move      Drag          Overlay Fill        Not Editing&Selected; not Backdrop.
+    * Cancel    ESC           Mosaic
+    - Indicate  -             Wrapper             Not Editing; not Backdrop.                      Mosaic delta
+    
+E   EDITING
+    * Open      DoubleClick   Wrapper             Not Editing                         
+    * Close     ESC           Mosaic              Editing
+    - Indicate                Contents
 
-      -- Events --
-   (3) Enable Editing Mode via DoubleClick?   When Arranging                          Arranging
-          -> implies WalkThere
-   (6) start Drag on Touch/MouseDrag?         When not (Editing and Selected)         Static
-          -> implies WalkThere
-   (7) Walk there via Pressdown?              When not (Editing and Selected)         Static
-          -> Walking implies reset of selection
-             if not Shift or Ctrl are pressed,
-             and it forces Arranging mode.
+F   FOCUS
+    * Reset     Drag          Overlay Fill        Not Editing&Selected.
+    - Indicate  -             Overlay Fill        Not Backdrop.                                   Focused?
+  
+I   INFLUENCE  
+    - Receive   -             Wrapper             Influencable Tile, overlaps with                Tiles a & b 
+    `                                              influencing tile.
+  
+O   OVERLAP  
+    * Swap      Click         Overlay Button      Not Editing; Not Backdrop; overlaps with        Delta to other tile
+    `                          on higher tile      another Non-Backdrop.
+  
+P   POSITION  
+    - Assign    -             Wrapper             Not Backdrop.                                   Tile position
+  
+R   REGION  
+    * Draw      Drag          Wrapper             Backdrop.
+  
+S   SELECTION                    
+    * Toggle    Click         Overlay Button      >1 tile selected; not Editing; not Backdrop.    Selected?
+    * Cancel    ESC           Mosaic
+    - Indicate  -             Overlay Fill        Not Backdrop.                                   Selected?
+  
 
-     The outer layer is independent of the type: just a Tile.
+U   To do: UNDO
+\
 
 -}
 
 
+
+is_arranging : Mosaic -> Bool
+is_arranging mosaic =
+    case mosaic of
+        Arranging _ _ ->
+            True
+
+        _ ->
+            False
+
+is_editing : Mosaic -> Bool
+is_editing = is_arranging >> not
+
+delta : Mosaic -> Delta
+delta mosaic =
+    case mosaic of
+        Arranging a _ -> Gui.running_delta a.trace
+        _ -> zero
+
+if_available : Maybe a -> (a->b->b) -> (b->b)
+if_available maybe_a fu =
+    maybe_a
+        |> Maybe.map fu
+        |> Maybe.withDefault identity
+
 view : Mosaic -> List (Html Msg)
 view mosaic =
-    let
-        -- Mosaic property:
-        arranging : Bool
-        arranging =
-            case mosaic of
-                Arranging _ _ ->
-                    True
+    let wrap =
+            if_available (trace mosaic) (Gui.with_draggability Drag Settle)
+            >> Gui.nest_collapsed
+                { controls = []
+                , how_to_expand = EnterEditingMode 
+                }
 
-                _ ->
-                    False
+        edit_or_drag =
+            if is_editing mosaic
+            then Gui.nest_expanded
+            else Gui.with_delta ( delta mosaic )
+                >> wrap
 
-        -- Attributes:
-        assign_position : Tile -> List (Html.Attribute Msg)
-        assign_position tile =
-            let
-                { x, y } =
-                    case tile of
-                        ArticleTile _ p _ ->
-                            p
+        draw_focused_tile =
+            Tile.view ( Tile.General.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+                >> edit_or_drag
+                >> Gui.view
+                    ( Gui.Focused AssertFocus )
 
-                        Trashcan p ->
-                            p
+        draw_selected_tile path =
+            Tile.view ( Tile.General.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+                >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
+                >> edit_or_drag
+                >> Gui.view 
+                    ( Gui.Selected ( Deselect path ) ( Walk (Zip.int_to_path path) ) )
 
-                        _ ->
-                            midpoint
-            in
-            [ Attributes.style "left" (String.fromFloat x ++ "px")
-            , Attributes.style "top" (String.fromFloat y ++ "px")
-            ]
+        draw_deselected_tile path =
+            Tile.view ( Tile.General.appearance GotTileMsg { selected = False, editing = is_editing mosaic } )
+                >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
+                >> wrap
+                >> Gui.view
+                    ( Gui.Deselected ( AlsoSelect path ) ( Walk (Zip.int_to_path path) ) )
 
-        assign_delta : List (Html.Attribute Msg)
-        assign_delta =
-            case mosaic of
-                Arranging a c ->
-                    [ Attributes.style "transform" ("translateX(" ++ String.fromFloat a.delta.x ++ "px)")
-                    , Attributes.style "transform" ("translateY(" ++ String.fromFloat a.delta.y ++ "px)")
-                    , Attributes.style "cursor" "move"
-                    ]
 
-                _ ->
-                    []
-
-        assign_draggable : Int -> List (Html.Attribute Msg)
-        assign_draggable id =
-            Draggable.mouseTrigger id Dragged
-                :: Draggable.touchTriggers id Dragged
-
-        -- Drawing:
-        {-
-
-                           ┏━━━━━━━━━━━━━━━━━┓
-                           ┃     wrapper     ┃
-                           ┃╔═════════╤─────╮┃
-                           ┃║ overlay ┊     │┃
-                           ┃╟┈┈┈┈┈┈┈┈┈╯     │┃
-                           ┃│               │┃
-                           ┃│    content    │┃
-                           ┃│               │┃
-                           ┃│               │┃
-                           ┃╰───────────────╯┃
-                           ┗━━━━━━━━━━━━━━━━━┛
-           .
-        -}
-        draw_focused_tile : Focused Tile -> Html Msg
-        draw_focused_tile (Focused tile) =
-            draw_overlays { focusing = True, static = arranging, selected = True }
-                |> wrap_tile { selected = True, path = 0 } tile
-
-        indexed_draw_peripheral_tile : Zip.IntPath -> Peripheral Tile -> Html Msg
-        indexed_draw_peripheral_tile path peripheral_tile =
-            case peripheral_tile of
-                Selected tile ->
-                    draw_overlays { focusing = False, static = arranging, selected = True }
-                        |> wrap_tile { selected = True, path = path } tile
-
-                Deselected tile ->
-                    draw_overlays { focusing = False, static = True, selected = False }
-                        |> wrap_tile { selected = False, path = path } tile
-
-        -- focusing: true in the focused tile. -- static: tile contents are static. -- selected: focused or within selection.
-        draw_overlays : { focusing : Bool, static : Bool, selected : Bool } -> List (Html Msg)
-        draw_overlays { focusing, static, selected } =
-            [ Ui.html_when focusing <|
-                div [ class "focus-indicator" ] []
-            , Ui.html_when static <|
-                div [ class "selection-indicator", Attributes.classList [ ( "selected", selected ) ] ] []
-            ]
-
-        wrap_tile : { selected : Bool, path : Zip.IntPath } -> Tile -> Ui.Overlay Msg -> Html Msg
-        wrap_tile { selected, path } tile overlays =
-            let
-                wrapper =
-                    div <|
-                        Ui.conditional_attributes <|
-                            ( class "tile", True )
-                                :: ( onDoubleClick EnterEditingMode, arranging )
-                                :: ( onMouseDown (Walk (Zip.int_to_path path)), arranging || not selected )
-                                :: (assign_delta |> List.map (\a -> ( a, selected )))
-                                ++ (assign_draggable path |> List.map (\a -> ( a, arranging )))
-                                ++ (assign_position tile |> List.map (\a -> ( a, True )))
-
-                content =
-                    case tile of
-                        ArticleTile id _ article ->
-                            article
-                                |> Article.view
-                                    (case ( arranging, selected ) of
-                                        ( _, False ) ->
-                                            Article.Normal
-
-                                        ( True, True ) ->
-                                            Article.Selected
-
-                                        ( False, True ) ->
-                                            Article.Editor (GotArticleMsg id)
-                                    )
-
-                        _ ->
-                            Ui.placeholder "title"
-            in
-            content
-                |> Ui.decorate_with overlays
-                |> Ui.wrap_with wrapper
     in
     all_tiles mosaic
         |> Zip.map_focus draw_focused_tile
-        |> Zip.indexed_map_periphery indexed_draw_peripheral_tile
-        |> Zip.fold_homogenous (\item acc -> item :: acc) []
+        |> Zip.indexed_map_periphery 
+            (\path peripheral_tile ->
+                case peripheral_tile of
+                    Selected tile ->
+                        draw_selected_tile path tile
+                    Deselected tile ->
+                        draw_deselected_tile path tile
+            )
+        |> Zip.fold_homogenous (::) []
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+offset : Mosaic -> List (Html.Attribute msg)
+offset mosaic = mosaic |> always []
+{-
+    all_tiles mosaic |> Zip.map_periphery enter |> Zip.foldl_homogenous
+        (\( Focused tile ) ({ x, y } as minimal) ->
+             case tile of
+                ArticleTile _ position _ ->
+                    { x = min x position.x , y = min y position.y }
+                _ -> minimal
+             )
+             midpoint
+    |> \{x, y} ->
+            [ Attributes.style "left" (String.fromFloat x ++ "px")
+            , Attributes.style "top" (String.fromFloat y ++ "px")
+            ]
+            -}
 
 {-
 

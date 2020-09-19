@@ -118,8 +118,6 @@ var custom_editor = customElements.define('custom-editor',
 			this.field = null;
 			this.squire = null;
 			this.replacement = null;
-			console.log ("JS--new Custom Editor created, with id="+this.id)
-
 
 			this.field = document.createElement("article");
 			this.field.tabIndex = 0;
@@ -127,12 +125,6 @@ var custom_editor = customElements.define('custom-editor',
 				blockTag: 'P'
 			} );
 			this.replacement = document.createElement("article");
-
-
-			this.id_indicator = document.createElement("h1");
-			this.id_indicator.innerText = this.id;
-			this.id_indicator.classList.add("id-indicator");
-			this.appendChild (this.id_indicator);
 
 			this.squire.addEventListener("pathChange", e=> {
 				const testThese =
@@ -153,7 +145,7 @@ var custom_editor = customElements.define('custom-editor',
 
 
 			this.draft = ( this.getAttribute("release") || "ERROR: no release html received" );
-			this.reflectState();
+			
 		}
 		
 		static get observedAttributes() { return ['release', 'caret', 'id', 'state', 'format']; }
@@ -191,7 +183,12 @@ var custom_editor = customElements.define('custom-editor',
 		connectedCallback() {
 			// The element has been attached to the DOM.
 			console.log ("JS-- ConnectedCallback --.");
+			this.reflectState();
 			
+		}
+		disconnectedCallback() {
+			console.log ("JS-- DisonnectedCallback --.");
+			this.innerHTML = "";
 		}
 		attributeChangedCallback(attr, oldVal, newVal){
 			console.log(attr,":   ",oldVal,"----->",newVal);
@@ -199,7 +196,7 @@ var custom_editor = customElements.define('custom-editor',
 				       case 'state': this.reflectState();
 				break; case 'caret': this.doCommand(newVal);
 				break; case 'release': if(this.squire) this.squire.setHTML(newVal);
-				break; case 'id': if (oldVal) console.error ("What? Someone has edited the id of this editor. Au Secours!");
+				break; case 'id': this.id_indicator.innerText = newVal;
 				break; case 'format' : this.doCommand(newVal);
 			}
 		}
