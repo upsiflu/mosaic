@@ -5,6 +5,7 @@ import './formats.css';
 import './ui.css';
 import './mosaic.css';
 import './main.css';
+import interact from '../interact/interact.min'
 import Squire from '../squire/squire'
 import { Elm } from './Main.elm';
 import * as serviceWorker from './serviceWorker';
@@ -14,52 +15,55 @@ import * as serviceWorker from './serviceWorker';
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
-
 const app = Elm.Main.init({
 	node: document.getElementById('root')
-  });
+});
 
   
 
 /* INTEROP
 
-. Interop Diagram                                   ┆                      ┆
-.                                                   ┆ vDom:                ┆
-. ━━━▶ Synchronize.                                 A Custom Attribute     ┆
-. ──▶  Affect.                                      E Custom Event         ┆
-. :::: Shadow (of same name).                       ┆                 Port P
-. [  ] event, resp. Message (of same name).         ┆                      ┆
-.                                                   ┆                      ┆
-.                                                   ┆                      ┆
-.                                                   ┆                      ┆
-.                                ╔═══════╗          ┆ ╻┏━━━━━━━━┓          ┆
-.	           ╭──────[ format ]─║ ::::: ◀━━━━━━━━━━A━┫┃ Format ┃ ◀ user input
-.              │                 ╚═══════╝          ┆ ╹┗━━━━━━━━┛          ┆
-.              │                                    ┆      ▲ modify        ┆
-.              │                                    ┆      │               ┆
-.              │                                    ┆      │               ┆     
-. apply format ▼                                    ┆      │               ┆
-.           ┏━━━━━━━┓╻                              ┆  ╔═══════╗           ┆
-user caret ▶┃ caret ┃┣━━━━━━━━━[ caret ]━━━━━━━━━━━━E━━▶ ::::: ║           ┆
-            ┃       ┃                               ┆  ║       ║           ┆
-user draft ▶┃ draft ┃┣━━━━━━━━━[ draft ]━━━━━━━━━━━━E━━▶ ::::: ║ ▶ e.g. store draft...
-.           ┗━━━━━━━┛╹                              ┆  ╚═══════╝           ┆ 
-.    overwrite ▲                                    ┆      │               ┆     
-.              │                                    ┆      │┄[ WalkAway ]  ┆
-.              │                                    ┆      │               ┆
-.              │                                    ┆      ▼ manifest      ┆     
-.              │                  ╔═══════╗         ┆ ╻┏━━━━━━━━━┓╻        ┆  ╔═════════╗
-.              ╰──────[ release ]─║ ::::: ◀━━━━━━━━━A━┫┃ Release ┃┣━━━━━━━━P━━▶ ::::::: ║
-.                                 ╚═══════╝         ┆ ╹┗━━━━━━━━━┛╹        ┆  ╚═════════╝
-.                                                   ┆      ▲ merge         ┆       │
-.                                                   ┆      │               ┆       │┄(eventual synchronization)
-.                                                   ┆      │┄[ Received ]  ┆       │
-.                                                   ┆      │               ┆       ▼
-.                                                   ┆  ╔═══════╗           ┆ ╻┏━━━━━━━━━━━┓
-.                                                   ┆  ║ ::::: ◀━━━━━━━━━━━P━┫┃ Canonical ┃ ◀ peers
-.                                                   ┆  ╚═══════╝           ┆ ╹┗━━━━━━━━━━━┛
-.                                                   ┆                      ┆
-.        Squire Instance     Custom Element Node    ╿      Elm Article     ╿  Server
+. Message and Type Diagram                      DOM ┆ vDOM                ┆
+.                                                   ▲                     ┆
+. ┃ Type ┣━━━⮞ Keep in sync.                        A custom Attribute      
+.          ──⮞ Affect.                              E custom Event        ▲
+. :::: Shadow (of same name).                       ▼                port P
+. [  ] event, resp. Message (of same name).                               ▼
+.                                                   ┆                       
+.                                                   ┆                     ┆
+.                                                                         ┆
+.                                ╔═══════╗          ▲   ┏━━━━━━━━┓        ┆
+.	             ╭────[ format ]─║ ::::: ⮜━━━━━━━━━━A━━━┫ Format ┃ ◀ user input
+.                │               ╚═══════╝          ▼   ┗━━━━━━━━┛        ┆
+.                │                                           ▲ modify     ┆
+.                │                                  ┆        │            ┆
+.                │                                  ┆        │            ┆     
+.   apply format ▼                                           │            ┆
+.           ┏━━━━━━━━━┓                             ▲   ╔═════════╗       ┆
+.(cursor) ▶ ┃  caret  ┣━━━━━━━━━━[ caret ]━━━━━━━━━━E━━━⮞  :::::  ║       ┆
+.           ┃         ┃                             ▲   ║         ║       ┆
+(pointer) ▶ ┃ pointer ┣━━━━━━━━━[ pointer ]━━━━━━━━━E━━━⮞ ::::::: ║       ┆
+.           ┃         ┃                             ▼   ║         ║       ┆ 
+.  (text) ▶ ┃  draft  ┣━━━━━━━━━━[ draft ]━━━━━━━━━━E━━━⮞  :::::  ║ ▶ e.g. store draft...
+.           ┗━━━━━━━━━┛                             ▼   ╚═════════╝       ┆ 
+.      overwrite ▲                                           │            ┆     
+.                │                                  ┆        +[ WalkAway ]┆
+.                │                                  ┆        │            ┆
+.                │                                           ▼ manifest         
+.                │                ╔═══════╗         ▲   ┏━━━━━━━━━┓       ▲   ╔═════════╗
+.                ╰────[ release ]─║ ::::: ⮜━━━━━━━━━A━━━┫ Release ┣━━━━━━━P━━━⮞ ::::::: ║
+.                                 ╚═══════╝         ▼   ┗━━━━━━━━━┛       ▼   ╚═════════╝
+.                                                            ▲ merge               │
+.                                                   ┆        │            ┆        +(eventual synchronization)
+.                                                   ┆        +[ Received ]┆        │
+.                                                   ┆        │                     ▼
+.                                                   ┆  ╔═══════════╗      ▲  ┏━━━━━━━━━━━┓
+.                                                   ┆  ║ ::::::::: ⮜━━━━━━P━━┫ Canonical ┃ ◀ (peers)
+.                                                   ┆  ╚═══════════╝      ▼  ┗━━━━━━━━━━━┛
+.                                                   ┆                       
+. -JS- --Squire Instance-- --Custom Element Node--  ╿  ---Elm Article---  ╿  ---Server---
+.                                                   ┆                     ┆     
+
 
    
 
@@ -75,6 +79,67 @@ app.ports.toServer.subscribe(message=> {
 	console.log ("Trying to send data to some server. Data is:", message);
 })
 */
+
+
+
+
+
+
+
+// DRAGGING
+
+// target elements with the "draggable" class
+interact('.draggable')
+  .draggable({
+    // enable inertial throwing
+    inertia: true,
+    // enable autoScroll
+    autoScroll: true,
+
+    listeners: {
+	  dragstart (event) {
+		var target = event.target;
+			target.classList.add("ghost");
+			console.log(target)
+	  },
+      move(event) {
+		  var target = event.target;
+		  var rect = target.getBoundingClientRect();
+
+			var x = event.pageX-rect.left
+		    var y = event.pageY-rect.top
+		  
+		  
+			console.log(x,y)
+		  
+		target.ghost = target;
+		if (!target.ghost) return;
+		  
+		// translate the element
+		target.ghost.style.webkitTransform =
+		  target.ghost.style.transform =
+		'translate(' + x + 'px, ' + y + 'px)'
+		  
+		  
+	  },
+      end (event) {
+		var target = event.target;
+		target.classList.remove ("ghost");
+          // (Math.sqrt(Math.pow(event.pageX - event.x0, 2) + Math.pow(event.pageY - event.y0, 2) | 0))
+	  }
+    }
+  })
+
+
+
+
+
+
+
+
+
+
+
 
 
 

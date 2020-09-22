@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Mosaic exposing (Mosaic)
 import Example
+import Gui
 
 
 
@@ -34,7 +35,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Mosaic.singleton
-                --|> Mosaic.add_article Example.html
+                |> Mosaic.add_article Example.html
                 |> Mosaic.add_article "Article Number 1"
                 |> Mosaic.add_article "Article Number 2"
                 |> Mosaic.add_article "Article Number 3"
@@ -71,17 +72,13 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ p []
-            [ Html.text "Mosaic v0.0"
-            , model
-                |> Mosaic.view
-                |> Html.div ( class "mosaic" :: Mosaic.offset model )
-                |> Html.map GotMosaicMsg
-
-            --,
-            --, Ui.button [class "fullwidth", onClick AddEditor] [Ui.icon "post_add"]
-            --, Ui.button [class "fullwidth test", onClick AddEditor] [Ui.icon "post_add"]
-            --, Ui.button [class "fullwidth", onClick AddEditor] [Ui.label "post_add"]
-            ]
+    div [ class "wrapper" ]
+        [ Html.text "Mosaic v0.0"
+        , model
+            |> Mosaic.view
+            |> Html.div ( class "mosaic" :: Mosaic.offset model )
+            |> Html.map GotMosaicMsg
+        ,  Html.button [ class "fix"] []
+        --, Ui.button [class "fullwidth test", onClick AddEditor] [Ui.icon "post_add"]
+        --, Ui.button [class "fullwidth", onClick AddEditor] [Ui.label "post_add"]
         ]

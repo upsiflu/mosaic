@@ -1,19 +1,17 @@
-#mosaic {
-    position: relative;
-    min-width: 100vw;
-    min-height: 100vh;
-    background: yellowgreen;
-}
-#mosaic #midpoint {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-}
-
 .tile {
     position: absolute;
+    touch-action: none;
 }
+
+.tile.ghost {opacity: .3;
+}
+
+.tile.ghost * {pointer-events: none;}
 
 .tile.passive {
     background: grey;
 }
+
+.mosaic { margin-left: 50vw;
+    margin-top: 50vh;
+position: relative;}

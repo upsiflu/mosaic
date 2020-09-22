@@ -8,8 +8,18 @@ module Tile exposing
     , view
     )
 
---import Ui exposing (Ui)
---import Zip exposing (Zip)
+{-| Stateful element of a `Mosaic`.
+
+@docs Tile, article
+
+# Update
+@docs Msg, update
+
+# View
+@docs position, midpoint
+@docs view
+-}
+
 import Tile.Article as Article exposing (Article)
 import Tile.General as General
 import Gui exposing (Position)
@@ -17,7 +27,8 @@ import Gui exposing (Position)
 
 
 
-{-Holds local data of the tile-}
+{-| Holds local data of the tile
+-}
 type Tile
     = ArticleTile Int Position Article
       --| LayoutTile Position Layout
@@ -27,7 +38,7 @@ type Tile
 
 
 
-
+{-|-}
 view : General.Appearance ( Msg -> msg ) -> Tile -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
 view appearance tile =
     let mediate_article_message : Int -> (Article.Msg -> Msg)
@@ -44,19 +55,18 @@ view appearance tile =
                 Gui.collapsed_document (Gui.icon "Canvas!" "aspect_ratio") [] []
 
 
--- Create:
-
+{-|-}
 article : String -> Int -> Position -> Tile
 article contents id pos =
     Article.singleton contents
         |> ArticleTile id pos
 
-
+{-|-}
 type Msg
     -- Articles
     = GotArticleMsg Int Article.Msg
 
-
+{-|-}
 update : Msg -> Tile -> Tile
 update msg tile =
     case ( msg, tile ) of
@@ -66,11 +76,11 @@ update msg tile =
             else tile
         _ -> tile
 
-
+{-|-}
 midpoint : Position
 midpoint =
     Position 0 0
-
+{-|-}
 position : Tile -> Position
 position tile =
     case tile of

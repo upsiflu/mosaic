@@ -9,7 +9,20 @@ module Tile.Article exposing
     , view
     )
 
---import Html as Untyped
+
+{-|
+@docs Article,singleton
+
+# Data
+@docs Caret, Draft, Format
+
+# Update
+@docs Msg, update
+
+# View
+@docs view
+-}
+
 import W3.Html exposing (Event, node, on, div, text, keyed)
 import W3.Html.Attributes exposing (attribute, class)
 import Json.Decode as Decode exposing (list, string)
@@ -17,39 +30,34 @@ import Json.Decode.Pipeline exposing (requiredAt)
 import Tile.General
 import Gui
 
+{-|-}
 type alias Article =
-    -- the text that the vDOM thinks is current (sent to JS through view):
     { release : Release
-
-    -- the most recent formatting command (sent to JS through view):
     , format : Format
-
-    -- the text that the user is actually editing (received from JS):
     , draft : Draft
     , caret : Caret
     }
 
 
+{-| The text that the vDOM thinks is current (sent to JS through view).
+-}
 type Caret
     = Caret (List String)
 
-
+{-| The most recent formatting command (sent to JS through view).
+-}
 type alias Format =
     String
 
-
+{-| The text that the user is actually editing (received from JS).
+-}
 type Draft
     = Draft String
-
 
 type alias Release =
     String
 
-
-
--- generate
-
-
+{-|-}
 singleton : String -> Article
 singleton s =
     { release = s
@@ -58,14 +66,14 @@ singleton s =
     , caret = Caret []
     }
 
-
+{-|-}
 type Msg
     = DraftChanged Draft
     | CaretChanged Caret
     | FormatIssued Format
     | GotTileMsg Tile.General.Msg
 
-
+{-|-}
 update : Msg -> Article -> Article
 update msg article =
     case msg of
@@ -84,9 +92,7 @@ update msg article =
 
 
 
--- Mosaic constructs the Appearance viewModel.
-
-
+{-| Mosaic constructs the `Appearance` viewModel. -}
 view : Tile.General.Appearance (Msg -> msg) -> Article -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
 view appearance article =
     let

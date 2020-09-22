@@ -1,3 +1,53 @@
+# Mosaic
+
+
+
+
+    . Message and Type Diagram                      DOM ┆ vDOM                ┆
+    .                                                   ▲                     ┆
+    . ┃ Type ┣━━━⮞ Keep in sync.                        A custom Attribute      
+    .          ──⮞ Affect.                              E custom Event        ▲
+    . :::: Shadow (of same name).                       ▼                port P
+    . [  ] event, resp. Message (of same name).                               ▼
+    .                                                   ┆                       
+    .                                                   ┆                     ┆
+    .                                                                         ┆
+    .                                ╔═══════╗          ▲   ┏━━━━━━━━┓        ┆
+    .                ╭────[ format ]─║ ::::: ⮜━━━━━━━━━━A━━━┫ Format ┃ ◀ user input
+    .                │               ╚═══════╝          ▼   ┗━━━━━━━━┛        ┆
+    .                │                                           ▲ modify     ┆
+    .                │                                  ┆        │            ┆
+    .                │                                  ┆        │            ┆     
+    .   apply format ▼                                           │            ┆
+    .           ┏━━━━━━━━━┓                             ▲   ╔═════════╗       ┆
+    .(cursor) ▶ ┃  caret  ┣━━━━━━━━━━[ caret ]━━━━━━━━━━E━━━⮞  :::::  ║       ┆
+    .           ┃         ┃                             ▲   ║         ║       ┆
+    (pointer) ▶ ┃ pointer ┣━━━━━━━━━[ pointer ]━━━━━━━━━E━━━⮞ ::::::: ║       ┆
+    .           ┃         ┃                             ▼   ║         ║       ┆ 
+    .  (text) ▶ ┃  draft  ┣━━━━━━━━━━[ draft ]━━━━━━━━━━E━━━⮞  :::::  ║ ▶ e.g. store draft...
+    .           ┗━━━━━━━━━┛                             ▼   ╚═════════╝       ┆ 
+    .      overwrite ▲                                           │            ┆     
+    .                │                                  ┆        +[ WalkAway ]┆
+    .                │                                  ┆        │            ┆
+    .                │                                           ▼ manifest         
+    .                │                ╔═══════╗         ▲   ┏━━━━━━━━━┓       ▲   ╔═════════╗
+    .                ╰────[ release ]─║ ::::: ⮜━━━━━━━━━A━━━┫ Release ┣━━━━━━━P━━━⮞ ::::::: ║
+    .                                 ╚═══════╝         ▼   ┗━━━━━━━━━┛       ▼   ╚═════════╝
+    .                                                            ▲ merge               │
+    .                                                   ┆        │            ┆        +(eventual synchronization)
+    .                                                   ┆        +[ Received ]┆        │
+    .                                                   ┆        │                     ▼
+    .                                                   ┆  ╔═══════════╗      ▲  ┏━━━━━━━━━━━┓
+    .                                                   ┆  ║ ::::::::: ⮜━━━━━━P━━┫ Canonical ┃ ◀ (peers)
+    .                                                   ┆  ╚═══════════╝      ▼  ┗━━━━━━━━━━━┛
+    .                                                   ┆                       
+    . -JS- --Squire Instance-- --Custom Element Node--  ╿  ---Elm Article---  ╿  ---Server---
+    .                                                   ┆                     ┆     
+
+
+
+
+
 # Elm App
 
 This project is bootstrapped with [Create Elm App](https://github.com/halfzebra/create-elm-app).

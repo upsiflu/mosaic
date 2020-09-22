@@ -1,0 +1,13 @@
+{
+    "name": "upsiflu/mosaic",
+    "summary": "Live Spatial Archive Editor",
+    "version": "0.0.1",
+    "exposed-modules": [
+        "Gui",
+        "Mosaic",
+        "Tile",
+        "Tile.General",
+        "Tile.Article",
+        "Zip"
+    ]
+}

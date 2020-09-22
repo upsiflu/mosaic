@@ -84,13 +84,10 @@ type Msg
     = DraftChanged Draft
     | CaretChanged Caret
     | FormatIssued Format
-    | GotTileMsg Tile.Message
+    | GotTileMsg Tile.Msg
 
 
 
-{-
-   | TileMessage Tile.Message
--}
 
 
 update : Msg -> Article -> Article

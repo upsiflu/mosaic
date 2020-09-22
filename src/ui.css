@@ -1,9 +1,31 @@
+.fix { position:fixed; top:0; left:0; }
+.wrapper {
+    max-width: 90vw;
+    max-height: 90vh;
+    background: white;
+    overflow: scroll;
+    height: 90vh;
+    width: 90vw;
+}
+
+
+
+
+
+
+
 [role="toolbar"] {
+    position: fixed; left: 0; top: 0;
+    height: 3rem; 
+    display: block; 
+    z-index: 2;
     list-style: none;
     display: flex;
     padding: 0;
     margin: 0;
-    position: absolute;
+}
+
+[role="toolbar"].palette{
     margin-top: -3rem;
     left: 0;
     position: sticky;
@@ -36,6 +58,8 @@
     .preview
       .T.b (text styles) or .h1 (paragraph styles)
 */
+
+
 
 /* faces */
 
@@ -96,9 +120,6 @@
 .tile:hover { background: rgba(200,200,200,.3); 
     outline: 1px dashed rgba(255,0,0,.9); outline-offset: .5rem; padding: 1em;}
 
-.mosaic { margin-left: 50vw;
-    margin-top: 50vh;
-position: absolute;}
 
 .gui.selected.pattern, .gui.focused.pattern {
     --bg: rgba(0, 144, 216,.2);

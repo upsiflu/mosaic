@@ -9,18 +9,6 @@
 
 /* Editor */
 
-
-.sources {display: inline-flex; width: 100%; position: absolute; bottom: 0; left: 0; box-sizing: border-box; height: 3rem;
-align-items: flex-end; display: none;}
-
-.label-current, .label-staging {
-  white-space: pre-line; margin: 0; padding: .5em;
-  background: silver; border-bottom: 1px solid black; font-size: .5em;
-  height: 3rem; max-height: 3rem; overflow-y: scroll !important;}
-
-.editor.toolbar, .sources {background: rgba(133, 133, 133, 0.2);}
-
-
 .toolbar button {
   min-width: 3rem;
   min-height: 3rem;
@@ -50,7 +38,6 @@ custom-editor[active]:before {
 .editors-container { background: white;}
 
 
-.toolbar {position: sticky; top: 0; height: 3rem;  display: block; z-index: 2;}
 .toolbar .paragraph-style {position: absolute; left: 0; max-height: 3rem; display: block; height: 3rem; 
   min-width: 3rem; z-index: 2; /* to make it wide enough and accessible even when the text window is occluded or narrow */}
 

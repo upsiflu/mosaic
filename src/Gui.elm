@@ -41,30 +41,40 @@ module Gui exposing
     , new_trace
     )
 
+{-| Compose a stateless UI in the `view` phase, based on W3.Aria. 
 
+# Create and view nested Items
+@docs Item, nest_collapsed, nest_expanded, view
+
+# Add content through Documents
+@docs Document, collapsed_document, expanded_document
+
+## Decorate a Document
+@docs with_toolbar, with_position, with_delta, with_draggability, with_attributes, with_class, with_info
+
+# Interactivity
+@docs Mode, State, Control, Toolbar, toolbar
+
+# Faces
+@docs Face, icon, literal, sample, with_hint, view_face
+
+# Positioning and tracing
+@docs Position, midpoint, add_delta, Delta, zero, running_delta, final_delta, DragTrace, new_trace
+
+-}
 
 import W3.Html exposing (..)
 import W3.Html.Attributes exposing (class, title, disabled, style, draggable )
 import W3.Aria.Attributes exposing (pressed, checked, true, false, expanded, orientation, horizontal)
 import W3.Aria as Aria
 
---import VirtualDom
-
 import Json.Decode as Decode exposing (float)
 import Json.Decode.Pipeline exposing (required)
-
---import Draggable
---import Draggable.Events
 
 import Html as Untyped
 
 
-
-{- This module exposes functions to build and view a graphical user interface during the 'view' phase, generally stateless. -}
-
-
-
-
+{-| has a `Face`, as well as attributes and descendents. -}
 type Item msg
     = Item 
         ( Face msg ) 
@@ -75,12 +85,15 @@ type Item msg
 
 -- create
 
+
+{-| composes a Document. -}
 nest_expanded : Document { mode | expanded : Mode } msg -> Item msg
 nest_expanded ( Document face attributes contents ) =
     Item face 
         ( Aria.document [ expanded (Just True) ] attributes ) 
         contents
 
+{-| composes a Document behind an `overlay`. -}
 nest_collapsed : { how_to_expand : msg, controls : List ( Control msg ) } -> Document { mode | collapsed : Mode } msg -> Item msg
 nest_collapsed overlay ( Document face attributes contents ) =
     Item face 
@@ -88,8 +101,7 @@ nest_collapsed overlay ( Document face attributes contents ) =
         ( List.map view_control overlay.controls ++ contents )
 
 
--- view
-
+{-|-}
 view : State msg -> Item msg -> Untyped.Html msg
 view state ( Item face attributes contents ) = 
     let hint = face |> \( Face h _ ) -> title h
@@ -126,10 +138,10 @@ view state ( Item face attributes contents ) =
 
 
 
-
+{-| Data type for extensible parameter records. -}
 type Mode = Mode
 
-
+{-|-}
 type State msg
     = Deselected msg msg
     | Selected msg msg
@@ -138,7 +150,7 @@ type State msg
 
 
 
-
+{-|-}
 type Control msg
     = Toggle ( Face msg ) { toggle : msg, is_on : Bool }
     | Check { hint : String, toggle : msg, is_checked : Bool }
@@ -146,8 +158,8 @@ type Control msg
     | Compose ( Face msg ) (List (Control msg))
 
 
--- view
 
+{-|-}
 view_control : Control msg -> Node FlowContent msg
 view_control control =
     let title_hint ( Face hint _ ) = title hint in
@@ -169,12 +181,14 @@ view_control control =
 -- TOOLBAR
 
 
+{-|-}
 type alias Toolbar msg = 
     Node FlowContent msg
 
 
 -- create
 
+{-|-}
 toolbar : Face msg -> List ( Control msg ) -> Toolbar msg
 toolbar label_face =
     let title_hint ( Face hint _ ) = title hint in
@@ -191,6 +205,7 @@ toolbar label_face =
 -- FACE
 
 
+{-|-}
 type Face msg
     = Face String (Node PhrasingContent msg)
 
@@ -199,6 +214,7 @@ type Face msg
 
 -- create
   
+{-|-}
 icon : String -> String -> Face msg
 icon hint string =
     span 
@@ -206,10 +222,12 @@ icon hint string =
         [ span [ class ["static", "material-icons"] ] [ text string ] ]
         |> Face hint
 
+{-|-}
 literal : String -> Face msg
 literal string =
     Face "" (text string)
 
+{-|-}
 sample : String -> String -> List (Node PhrasingContent msg) -> Face msg
 sample hint name samples =
     span [ class [ "preview", "static" ] ] 
@@ -221,6 +239,7 @@ sample hint name samples =
 
 -- map
 
+{-|-}
 with_hint : String -> Face msg -> Face msg
 with_hint hint (Face _ html) =
     Face hint html
@@ -228,6 +247,7 @@ with_hint hint (Face _ html) =
 
 -- view
 
+{-|-}
 view_face : Face msg -> Node PhrasingContent msg
 view_face ( Face description descendant ) =
     span [ class ["face"], title description ] [ descendant ]
@@ -240,26 +260,30 @@ view_face ( Face description descendant ) =
 
 
 
-{- To limit certain functions on subsets of the Document type, `mode` provides a flexible phantom type parameter. -}
+{-| To limit certain functions on subsets of the Document type, `mode` provides a flexible phantom type parameter. -}
 type Document mode msg
     = Document ( Face msg ) ( List (GlobalAttributes {} msg ) ) ( List ( Node FlowContent msg ) )
 
 
 -- create
 
+{-|-}
 collapsed_document : Face msg ->  List (GlobalAttributes {} msg ) -> List ( Node FlowContent msg ) -> Document { mode | collapsed : Mode } msg
 collapsed_document = Document
 
+{-|-}
 expanded_document : Face msg -> List (GlobalAttributes {} msg ) -> List ( Node FlowContent msg ) -> Document { mode | expanded : Mode } msg
 expanded_document = Document
 
 
 -- map
 
+{-|-}
 with_toolbar : Toolbar msg -> Document { mode | expanded : Mode } msg -> Document { mode | expanded : Mode } msg
 with_toolbar t ( Document face attributes contents ) =
     Document face attributes ( t::contents )
 
+{-|-}
 with_position : Position -> Document mode msg -> Document mode msg
 with_position { x, y } =
     with_attributes
@@ -267,9 +291,11 @@ with_position { x, y } =
         , style "top" (String.fromFloat y ++ "px")
         ]
 
+{-|-}
 with_class : String -> Document mode msg -> Document mode msg
 with_class str = with_attributes [ class [str] ]
 
+{-|-}
 with_delta : Delta -> Document mode msg -> Document mode msg
 with_delta { x, y } =
     with_attributes
@@ -277,6 +303,7 @@ with_delta { x, y } =
             ("translate(" ++ String.fromInt x ++ "px, " ++ String.fromInt y ++ "px)")
         ]
 
+{-|-}
 with_info : Face msg -> Document { mode | expanded : Mode } msg -> Document { mode | expanded : Mode } msg
 with_info info ( Document face attributes contents ) =
     Document face attributes ( (span [ class ["gui","info"] ] [view_face info])::contents )
@@ -284,6 +311,7 @@ with_info info ( Document face attributes contents ) =
     
 
 
+{-|-}
 with_attributes :  List (GlobalAttributes {} msg ) -> Document mode msg -> Document mode msg
 with_attributes new_attributes ( Document face attributes contents )=
     Document face (new_attributes++attributes) contents
@@ -291,6 +319,7 @@ with_attributes new_attributes ( Document face attributes contents )=
 
 
 
+{-|-}
 with_draggability : (DragTrace -> msg) -> (DragTrace -> msg) -> 
                     DragTrace -> 
                     Document mode msg -> Document mode msg
@@ -325,12 +354,12 @@ with_draggability how_to_drag how_to_settle trace =
     in 
     with_attributes
         [ style "cursor" "move"
-        , style "touch-action" "none"
-        --, draggable True
-        , on "pointerdown" create_zero_trace
-        , on "pointermove" append_if_running
-        , on "pointerup" decode_dragend
-        , on "pointerout" decode_dragexit
+        , class ["draggable"]
+        --, style "touch-action" "none"
+        --, on "pointerdown" create_zero_trace
+        --, on "pointermove" append_if_running
+        --, on "pointerup" decode_dragend
+        --, on "pointerout" decode_dragexit
         ]
 
 
@@ -338,6 +367,7 @@ with_draggability how_to_drag how_to_settle trace =
 
 
 
+{-|-}
 type DragTrace
     = Zero
     | Running Delta (List Delta) Delta
@@ -347,12 +377,14 @@ type DragTrace
 
 --create
 
+{-|-}
 new_trace : DragTrace
 new_trace = Done zero [] zero
 
 
 -- map
 
+{-|-}
 trace_drag : Delta -> DragTrace -> DragTrace
 trace_drag delta trace =
     case trace of
@@ -360,6 +392,7 @@ trace_drag delta trace =
         Running final list initial -> Running delta ( final :: list ) initial
         _ -> trace
 
+{-|-}
 done_drag_trace : DragTrace -> DragTrace
 done_drag_trace trace =
     case trace of
@@ -367,6 +400,7 @@ done_drag_trace trace =
         Running final list initial -> Done final list initial
         _ -> trace
 
+{-|-}
 cancel_drag_trace : DragTrace -> DragTrace
 cancel_drag_trace trace =
     case trace of
@@ -383,6 +417,7 @@ cancel_drag_trace trace =
 
 
 
+{-|-}
 type alias Position =
     { x : Float
     , y : Float
@@ -390,12 +425,14 @@ type alias Position =
 
 -- create
 
+{-|-}
 midpoint : Position
 midpoint = Position 0 0 
 
 
 -- map
 
+{-|-}
 add_delta : Delta -> Position -> Position
 add_delta delta { x, y } =
     Position (x + toFloat delta.x) (y + toFloat delta.y)
@@ -405,6 +442,7 @@ add_delta delta { x, y } =
 
 
 
+{-|-}
 type alias DragCoordinates =
     { pageX : Float
     , pageY : Float
@@ -413,6 +451,7 @@ type alias DragCoordinates =
 
 -- create
 
+{-|-}
 coordinates_to_delta : DragCoordinates -> Delta
 coordinates_to_delta { pageX, pageY } =
     Delta (round pageX) (round pageY)
@@ -420,6 +459,7 @@ coordinates_to_delta { pageX, pageY } =
 
 
 
+{-|-}
 type alias Delta =
     { x : Int 
     , y : Int
@@ -428,9 +468,11 @@ type alias Delta =
 
 -- create
 
+{-|-}
 zero : Delta
 zero = { x = 0, y = 0 }
 
+{-|-}
 running_delta : DragTrace -> Delta
 running_delta trace =
     case trace of
@@ -439,6 +481,7 @@ running_delta trace =
         Canceled final _ initial -> diff final initial
         Done _ _ _ -> zero
 
+{-|-}
 final_delta : DragTrace -> Delta
 final_delta trace =
     case trace of
@@ -450,6 +493,7 @@ final_delta trace =
 
 -- map
 
+{-|-}
 diff : Delta -> Delta -> Delta
 diff final initial =
     Delta (final.x-initial.x) (final.y-initial.y)

@@ -10,13 +10,37 @@ module Mosaic exposing
     , walk
     )
 
---import Draggable
---import Draggable.Events
+{-| holds a zip of Tiles.
+
+One of the tiles is the `Focused Tile`, the others are `Peripheral Tiles`.
+
+The Focused Tile is always selected, whereas the Peripheral Tiles can individually be selected or deselected.
+
+The Mosaic has two states.
+In `Editing` mode, the selected Tiles present an Active view.
+In `Arranging` mode, the selected Tiles present a Static view, 
+i.e. they don't handle any interaction.
+In this mode, the selected Tiles (including the Focused Tile) can be dragged, 
+always in unison.
+
+When you drag a tile over another, it may change its internal state. This is determined by the concrete tile's module.
+
+@docs Mosaic, singleton
+
+# Map
+@docs add_article, mark, offset, walk
+
+# Update
+@docs Msg, subscriptions, update
+    
+# View
+@docs view
+
+-}
+
 import Html exposing (Html)
---import Html.Attributes as Attributes exposing (class, id)
 import Html.Events exposing (..)
 import Tile exposing ( Tile )
---import Ui
 import Zip exposing (Path(..), Zip)
 import Gui exposing (Position, midpoint, Delta, zero)
 
@@ -24,23 +48,8 @@ import Tile.General
 
 
 
-{-
 
-   A mosaic holds a zip of Tiles.
-
-   One of the tiles is the Focused Tile, the others are Peripheral Tiles.
-
-   The Focused Tile is always selected, whereas the Peripheral Tiles can individually be selected or deselected.
-
-   The Mosaic has two states, Editing and Arranging.
-       In Editing mode, the selected Tiles present an Active view.
-       In Arranging mode, the selected Tiles present a Static view, i.e. they don't handle any interaction.
-           In this mode, the selected Tiles (including the Focused Tile) can be dragged, always in unison.
-
-   When you drag a tile over another, it may change its internal state. This is determined by the concrete tile's module.
--}
-
-
+{-|-}
 type Mosaic
     = Arranging Arrangement Composition
     | Editing Composition
@@ -65,6 +74,7 @@ type Peripheral a
 
 
 
+{-|-}
 singleton : Mosaic
 singleton =
     Editing
@@ -114,6 +124,7 @@ trace mosaic =
         Arranging a _ -> Just a.trace
 
 
+{-|-}
 type Msg
     = EnterEditingMode
     | AddEditor
@@ -130,6 +141,7 @@ type Msg
     | Settle (Gui.DragTrace)
 
 
+{-|-}
 update : Msg -> Mosaic -> ( Mosaic, Cmd Msg )
 update msg mosaic =
     let
@@ -183,7 +195,11 @@ update msg mosaic =
                 |> noop
 
         ( Settle trc, Arranging a c ) ->
-             manifest_delta { a | trace = if a.trace == trc then a.trace else Debug.log "Settle" (Gui.final_delta trc) |> always trc } c
+             manifest_delta 
+                { a | trace =   if a.trace == trc 
+                                then a.trace 
+                                else Debug.log "Settle" (Gui.final_delta trc) |> always trc 
+                } c
                 |> noop
 
         _ -> noop mosaic
@@ -206,6 +222,7 @@ manifest_delta a c =
                     _ -> tile
                 )
 
+{-|-}
 add_article : String -> Mosaic -> Mosaic
 add_article contents mosaic =
     mosaic
@@ -299,17 +316,20 @@ select selection =
         _ ->
             selection
 
+{-|-}
 mark : (Tile -> Tile) -> Mosaic -> Mosaic
 mark fu =
     map_tiles (Zip.map_focus fu)
 
 
+{-|-}
 walk : Zip.Path -> Mosaic -> Mosaic
 walk path =
     map_tiles
         (Zip.walk ( leave >> deselect ) enter path)
 
 
+{-|-}
 subscriptions : Mosaic -> Sub Msg
 subscriptions mosaic =
             Sub.none
@@ -391,6 +411,7 @@ if_available maybe_a fu =
         |> Maybe.map fu
         |> Maybe.withDefault identity
 
+{-|-}
 view : Mosaic -> List (Html Msg)
 view mosaic =
     let wrap =
@@ -403,8 +424,8 @@ view mosaic =
         edit_or_drag =
             if is_editing mosaic
             then Gui.nest_expanded
-            else Gui.with_delta ( delta mosaic )
-                >> wrap
+            else {-Gui.with_delta ( delta mosaic )
+                >>-} wrap
 
         draw_focused_tile =
             Tile.view ( Tile.General.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
@@ -453,6 +474,7 @@ view mosaic =
 
 
 
+{-|-}
 offset : Mosaic -> List (Html.Attribute msg)
 offset mosaic = mosaic |> always []
 {-
