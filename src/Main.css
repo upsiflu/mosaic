@@ -6,6 +6,16 @@
     https://github.com/halfzebra/create-elm-app/issues/320
 */
 
+.fix { position:fixed; top:0; left:0; }
+.wrapper {
+    background: white;
+    overflow: hidden;
+    height: calc(100vh - 2rem);
+    width: 100vw;
+    background: rgba(240,220,150,43);
+}
+
+
 
 /* Editor */
 

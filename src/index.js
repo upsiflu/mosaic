@@ -1,13 +1,17 @@
-import './normalize.css';
-import './retro.css';
-import './layout.css';
-import './formats.css';
-import './ui.css';
-import './mosaic.css';
-import './main.css';
-import interact from '../interact/interact.min'
-import Squire from '../squire/squire'
-import { Elm } from './Main.elm';
+import './index/normalize.css';
+import './index/retro.css';
+import './index/baseline.css';
+import './index/draggabilly.css';
+import './Tile/Article.css';
+import './Gui.css';
+import './Mosaic.css';
+import './Main.css';
+import interact from '../js/interact/interact.min'
+import Draggabilly from '../js/draggabilly/draggabilly.pkgd'
+import Squire from '../js/squire/squire'
+import {
+    Elm
+} from './Main.elm';
 import * as serviceWorker from './serviceWorker';
 
 // If you want your app to work offline and load faster, you can change
@@ -16,10 +20,10 @@ import * as serviceWorker from './serviceWorker';
 serviceWorker.unregister();
 
 const app = Elm.Main.init({
-	node: document.getElementById('root')
+    node: document.getElementById('root')
 });
 
-  
+
 
 /* INTEROP
 
@@ -86,58 +90,6 @@ app.ports.toServer.subscribe(message=> {
 
 
 
-// DRAGGING
-
-// target elements with the "draggable" class
-interact('.draggable')
-  .draggable({
-    // enable inertial throwing
-    inertia: true,
-    // enable autoScroll
-    autoScroll: true,
-
-    listeners: {
-	  dragstart (event) {
-		var target = event.target;
-			target.classList.add("ghost");
-			console.log(target)
-	  },
-      move(event) {
-		  var target = event.target;
-		  var rect = target.getBoundingClientRect();
-
-			var x = event.pageX-rect.left
-		    var y = event.pageY-rect.top
-		  
-		  
-			console.log(x,y)
-		  
-		target.ghost = target;
-		if (!target.ghost) return;
-		  
-		// translate the element
-		target.ghost.style.webkitTransform =
-		  target.ghost.style.transform =
-		'translate(' + x + 'px, ' + y + 'px)'
-		  
-		  
-	  },
-      end (event) {
-		var target = event.target;
-		target.classList.remove ("ghost");
-          // (Math.sqrt(Math.pow(event.pageX - event.x0, 2) + Math.pow(event.pageY - event.y0, 2) | 0))
-	  }
-    }
-  })
-
-
-
-
-
-
-
-
-
 
 
 
@@ -147,17 +99,17 @@ interact('.draggable')
 
 // ARTICLE EDITOR
 
-Squire.prototype.replaceBlockWith = function ( tag ) {
-	this.modifyBlocks( frag => {
-		var output = this._doc.createDocumentFragment();
-		var block = frag;
-		while ( block = Squire.getNextBlock( block ) ) {
-		output.appendChild (
-			this.createElement( tag, [ Squire.empty( block ) ] )
-		);
-		}
-		return output;
-	});
+Squire.prototype.replaceBlockWith = function(tag) {
+    this.modifyBlocks(frag => {
+        var output = this._doc.createDocumentFragment();
+        var block = frag;
+        while (block = Squire.getNextBlock(block)) {
+            output.appendChild(
+                this.createElement(tag, [Squire.empty(block)])
+            );
+        }
+        return output;
+    });
 }
 
 
@@ -175,125 +127,187 @@ Squire.prototype.replaceBlockWith = function ( tag ) {
 */
 
 var custom_editor = customElements.define('custom-editor',
-	class extends HTMLElement {
-		// required by Custom Elements 
-		constructor() { 
-			super();
-			this.editor = this;
-			this.field = null;
-			this.squire = null;
-			this.replacement = null;
+    class extends HTMLElement {
+        // required by Custom Elements 
+        constructor() {
+            super();
+            console.log("create custom editor:")
+            this.editor = this;
 
-			this.field = document.createElement("article");
-			this.field.tabIndex = 0;
-			this.squire = new Squire( this.field, {
-				blockTag: 'P'
-			} );
-			this.replacement = document.createElement("article");
-
-			this.squire.addEventListener("pathChange", e=> {
-				const testThese =
-					["b", "strong", "i", "emph", "H1", "H2", "H3", "H4", "p", "div", "UL", "OL", "A", "LI"]
-				var caret = new CustomEvent ("caret", {detail: 
-					{caret: testThese.filter (f=>this.squire.hasFormat(f))}
-				});
-				this.editor.dispatchEvent(caret);
-			})
-
-			this.squire.addEventListener("input", e=> {
-				// do not change attributes because that would wake up the virtual-dom differ!
-				const draft = new CustomEvent ("draft", {detail: 
-					{draft: this.draft, id: this.id}
-				});
-				this.editor.dispatchEvent(draft);
-			})
+            this.field = document.createElement("article");
+            this.field.tabIndex = 0;
 
 
-			this.draft = ( this.getAttribute("release") || "ERROR: no release html received" );
-			
-		}
-		
-		static get observedAttributes() { return ['release', 'caret', 'id', 'state', 'format']; }
 
-		doCommand (command) {
-			console.log("DO",command)
-			switch (command) {
-				case "increaseLevel":
-					if (this.squire.hasFormat('LI'))
-						this.squire.increaseListLevel();
-					else this.squire.increaseQuoteLevel();
-					break;
-				case "decreaseLevel":
-					if (this.squire.hasFormat('LI'))
-						this.squire.decreaseListLevel();
-					else this.squire.decreaseQuoteLevel();
-					break;
-				case "makeUnorderedList":this.squire.makeUnorderedList(); break;
-				case "makeOrderedList":this.squire.makeOrderedList(); break;
-				case "removeList":this.squire.removeList(); break;
-				case "makeTitle":this.squire.replaceBlockWith('h1'); break;
-				case "makeHeader":this.squire.replaceBlockWith('h2'); break;
-				case "makeSubheader":this.squire.replaceBlockWith('h3'); break;
-				case "removeHeader":this.squire.replaceBlockWith('p'); break;
-				case "bold":this.squire.bold(); break;
-				case "removeBold":this.squire.removeBold(); break;
-				case "italic":this.squire.italic(); break;
-				case "removeItalic":this.squire.removeItalic(); break;
-				case "undo":this.squire.undo(); break;
-				case "redo":this.squire.redo(); break;
-				case "removeAllFormatting":this.squire.removeAllFormatting(); break;
-			}
-			this.squire.focus();
-		}
-		connectedCallback() {
-			// The element has been attached to the DOM.
-			console.log ("JS-- ConnectedCallback --.");
-			this.reflectState();
-			
-		}
-		disconnectedCallback() {
-			console.log ("JS-- DisonnectedCallback --.");
-			this.innerHTML = "";
-		}
-		attributeChangedCallback(attr, oldVal, newVal){
-			console.log(attr,":   ",oldVal,"----->",newVal);
-			switch (attr) {
-				       case 'state': this.reflectState();
-				break; case 'caret': this.doCommand(newVal);
-				break; case 'release': if(this.squire) this.squire.setHTML(newVal);
-				break; case 'id': this.id_indicator.innerText = newVal;
-				break; case 'format' : this.doCommand(newVal);
-			}
-		}
+            // ARTICLE SPECIFIC EVENTS
 
-		reflectState(){
-			if (this.hasAttribute('state') && this.getAttribute('state') == 'editing'){
-				if (this.contains (this.replacement)) this.removeChild (this.replacement);
-				if (!this.contains (this.field)) this.appendChild (this.field);
-			}
-			else {
-				if (this.contains (this.field))
-					this.removeChild (this.field);
-				if (this.replacement && !this.contains (this.replacement)) {
-					if (this.hasAttribute("release"))
-						this.replacement.innerHTML = this.getAttribute("release");
-					this.appendChild(this.replacement);
-				}
-			}
-		}
-		
+            this.squire = new Squire(this.field, {
+                blockTag: 'P'
+            });
+            this.replacement = document.createElement("article");
+            this.draft = (this.getAttribute("release") || "ERROR: no release html received");
+
+            // E caret
+
+            this.squire.addEventListener("pathChange", e => {
+                const testThese = ["b", "strong", "i", "emph", "H1", "H2", "H3", "H4", "p", "div", "UL", "OL", "A", "LI"]
+                let caret = new CustomEvent("caret", {
+                    detail: {
+                        caret: testThese.filter(f => this.squire.hasFormat(f))
+                    }
+                });
+                this.editor.dispatchEvent(caret);
+            })
+
+            // E draft
+
+            this.squire.addEventListener("input", e => {
+                let draft = new CustomEvent("draft", {
+                    detail: {
+                        draft: this.draft,
+                        id: this.id
+                    }
+                });
+                this.editor.dispatchEvent(draft);
+            })
 
 
-		get draft() {
-			return this.squire.getHTML();
-		} 
-		set draft(val) {
-			this.squire.setHTML(val);
-		}
-	}
+
+
+        }
+
+        static get observedAttributes() {
+            return ['release', 'caret', 'id', 'state', 'format'];
+        }
+
+        connectedCallback() {
+            // The element has been attached to the DOM.
+            console.log(this.getAttribute("release"), "connected", );
+            this.reflectState();
+
+        }
+        disconnectedCallback() {
+            console.log(this.getAttribute("release"), "disconnected", );
+            this.innerHTML = "";
+        }
+        attributeChangedCallback(attr, oldVal, newVal) {
+            //console.log(attr, ":   ", oldVal, "----->", newVal);
+
+            let doCommand = (command) => {
+                console.log("DO", command)
+                switch (command) {
+                    case "increaseLevel":
+                        if (this.squire.hasFormat('LI'))
+                            this.squire.increaseListLevel();
+                        else this.squire.increaseQuoteLevel();
+                        break;
+                    case "decreaseLevel":
+                        if (this.squire.hasFormat('LI'))
+                            this.squire.decreaseListLevel();
+                        else this.squire.decreaseQuoteLevel();
+                        break;
+                    case "makeUnorderedList":
+                        this.squire.makeUnorderedList();
+                        break;
+                    case "makeOrderedList":
+                        this.squire.makeOrderedList();
+                        break;
+                    case "removeList":
+                        this.squire.removeList();
+                        break;
+                    case "makeTitle":
+                        this.squire.replaceBlockWith('h1');
+                        break;
+                    case "makeHeader":
+                        this.squire.replaceBlockWith('h2');
+                        break;
+                    case "makeSubheader":
+                        this.squire.replaceBlockWith('h3');
+                        break;
+                    case "removeHeader":
+                        this.squire.replaceBlockWith('p');
+                        break;
+                    case "bold":
+                        this.squire.bold();
+                        break;
+                    case "removeBold":
+                        this.squire.removeBold();
+                        break;
+                    case "italic":
+                        this.squire.italic();
+                        break;
+                    case "removeItalic":
+                        this.squire.removeItalic();
+                        break;
+                    case "undo":
+                        this.squire.undo();
+                        break;
+                    case "redo":
+                        this.squire.redo();
+                        break;
+                    case "removeAllFormatting":
+                        this.squire.removeAllFormatting();
+                        break;
+                }
+                this.squire.focus();
+            };
+
+
+            switch (attr) {
+                case 'state':
+                    this.reflectState();
+                    break;
+                case 'release':
+                    if (this.squire) this.squire.setHTML(newVal);
+                    console.log(oldVal, "-> set release:", newVal)
+                    break;
+                case 'format':
+                    if (newVal != "") doCommand(newVal);
+            }
+        }
+        reflectState() {
+            var handle;
+            if (this.hasAttribute('state') && this.getAttribute('state') == 'editing') {
+                if (this.contains(this.replacement)) this.removeChild(this.replacement);
+                if (!this.contains(this.field)) this.appendChild(this.field);
+                handle = this.field;
+            } else {
+                if (this.contains(this.field))
+                    this.removeChild(this.field);
+                if (this.replacement && !this.contains(this.replacement)) {
+                    if (this.hasAttribute("release"))
+                        this.replacement.innerHTML = this.getAttribute("release");
+                    this.appendChild(this.replacement);
+                }
+                handle = this.replacement;
+
+                // POINTER EVENTS AND DRAGGING
+
+                let draggie = new Draggabilly(handle);
+                console.log("adding a draggie:", draggie)
+                draggie.on('dragMove', function() {
+                    console.log('dragMove', this.position.x, this.position.y);
+                });
+
+
+                // E delta
+
+                // E size
+
+                // E press
+
+                // E tap
+
+                // E grab
+
+                // E drop
+            }
+        }
+        get draft() {
+            return this.squire.getHTML();
+        }
+        set draft(val) {
+            this.squire.setHTML(val);
+        }
+    }
 )
-
-
-
-
-

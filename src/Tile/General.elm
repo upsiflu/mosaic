@@ -4,7 +4,7 @@ module Tile.General exposing
     , appearance
     , map_appearance)
 
-{-| Interface module for all Tiles.
+{-| Stateless (interface) module for all Tiles.
 @docs Msg
 
 # Appearance
@@ -25,7 +25,7 @@ type Appearance how_to_message
     | Selected
     | Editor how_to_message
 
-{-| Calculates how a Tile appears, given a tuple of conditions. -}
+{-| Calculates how a Tile appears, given a set of conditions. -}
 appearance : (specific -> general) -> { selected : Bool, editing : Bool } -> Appearance (specific -> general)
 appearance how_to_message conditions
     = case ( conditions.selected, conditions.editing ) of

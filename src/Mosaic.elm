@@ -27,13 +27,13 @@ When you drag a tile over another, it may change its internal state. This is det
 
 @docs Mosaic, singleton
 
-# Map
+## Map
 @docs add_article, mark, offset, walk
 
-# Update
+## Update
 @docs Msg, subscriptions, update
     
-# View
+## View
 @docs view
 
 -}
@@ -79,7 +79,7 @@ singleton : Mosaic
 singleton =
     Editing
         { tiles =
-            Zip.singleton Tile.Canvas
+            Zip.singleton Tile.Base
                 |> Zip.insert_right (Tile.Trashcan midpoint |> Deselected)
         , viewport = midpoint
         }
@@ -228,7 +228,7 @@ add_article contents mosaic =
     mosaic
         |> map_tiles
             (Zip.insert_right
-                (Tile.article contents (size mosaic) ( Tile.midpoint |> Gui.add_delta {x = (size mosaic - 2) * 110, y = (size mosaic - 2) * 20})
+                (Tile.article contents (size mosaic) ( Tile.midpoint |> Gui.add_delta {x = (size mosaic - 2) * 10, y = (size mosaic - 2) * 100 + 70})
                     |> Deselected
                 )
             )
@@ -331,7 +331,7 @@ walk path =
 
 {-|-}
 subscriptions : Mosaic -> Sub Msg
-subscriptions mosaic =
+subscriptions _ =
             Sub.none
 
 

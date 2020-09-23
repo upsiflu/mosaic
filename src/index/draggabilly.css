@@ -1,0 +1,12 @@
+.draggable {
+    border: 3px solid rgba(255,255,255,.5);
+    box-sizing: border-box;
+    border-radius: 10px;
+  }
+  .draggable:hover{
+    border: 3px solid rgba(255,0,0,.5);
+  }
+  .draggable.is-pointer-down {
+    background: #09F;
+  }
+  .draggable.is-dragging { opacity: 0.7; }

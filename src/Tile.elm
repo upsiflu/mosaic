@@ -20,7 +20,7 @@ module Tile exposing
 @docs view
 -}
 
-import Tile.Article as Article exposing (Article)
+import Tile.Article as Article
 import Tile.General as General
 import Gui exposing (Position)
 
@@ -30,29 +30,11 @@ import Gui exposing (Position)
 {-| Holds local data of the tile
 -}
 type Tile
-    = ArticleTile Int Position Article
+    = ArticleTile Int Position Article.Article
       --| LayoutTile Position Layout
       --| EntranceTile Position String
     | Trashcan Position
-    | Canvas
-
-
-
-{-|-}
-view : General.Appearance ( Msg -> msg ) -> Tile -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
-view appearance tile =
-    let mediate_article_message : Int -> (Article.Msg -> Msg)
-        mediate_article_message = GotArticleMsg
-    in
-    Gui.with_class "tile"
-        <| Gui.with_position ( position tile )
-        <| case tile of
-            ArticleTile id _ art ->
-                art |> Article.view (General.map_appearance ( mediate_article_message id ) appearance) |> Gui.with_info (Gui.literal <| String.fromInt id)
-            Trashcan _ ->
-                Gui.collapsed_document (Gui.icon "Trashcan. Move Stuff in here to hide it from the public." "delete") [] []
-            Canvas -> 
-                Gui.collapsed_document (Gui.icon "Canvas!" "aspect_ratio") [] []
+    | Base
 
 
 {-|-}
@@ -94,6 +76,26 @@ position tile =
             midpoint
 
 
+
+
+
+
+{-|-}
+view : General.Appearance ( Msg -> msg ) -> Tile -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
+view appearance tile =
+    let mediate_article_message : Int -> (Article.Msg -> Msg)
+        mediate_article_message = GotArticleMsg
+    in
+    Gui.with_class "tile"
+        <| Gui.with_position ( position tile )
+        <| case tile of
+            ArticleTile id _ art ->
+                art |> Article.view (General.map_appearance ( mediate_article_message id ) appearance) 
+                    |> Gui.with_info (Gui.literal <| String.fromInt id)
+            Trashcan _ ->
+                Gui.collapsed_document (Gui.icon "Trashcan. Move Stuff in here to hide it from the public." "delete") [] []
+            Base -> 
+                Gui.collapsed_document (Gui.icon "Canvas!" "aspect_ratio") [] []
 
 
 

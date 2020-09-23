@@ -1,0 +1,16 @@
+.tile {
+    position: absolute;
+    touch-action: none;
+}
+
+.tile.ghost {
+    opacity: .3;
+}
+
+.tile.ghost * {
+    pointer-events: none;
+}
+
+.tile.passive {
+    background: grey;
+}

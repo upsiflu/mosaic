@@ -35,12 +35,12 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Mosaic.singleton
-                |> Mosaic.add_article Example.html
-                |> Mosaic.add_article "Article Number 1"
-                |> Mosaic.add_article "Article Number 2"
-                |> Mosaic.add_article "Article Number 3"
-                |> Mosaic.add_article "Article Number 4"
-                |> Mosaic.add_article "Article Number 5"
+                --|> Mosaic.add_article Example.html
+                |> Mosaic.add_article "1"
+                |> Mosaic.add_article "2"
+                |> Mosaic.add_article "3"
+                |> Mosaic.add_article "4"
+                |> Mosaic.add_article "5"
     , Cmd.none
     )
 
