@@ -29,7 +29,7 @@ module Tile.Article exposing
 import Gui
 import Json.Decode as Decode exposing (index, int, list, map2, string)
 import Json.Decode.Pipeline exposing (requiredAt)
-import Tile.General
+import Tile.Interface
 import W3.Html exposing (Event, div, node, on, text)
 import W3.Html.Attributes exposing (attribute, class)
 
@@ -116,7 +116,7 @@ type
     | Dropped Vector
       -- Attributes
     | FormatIssued Format
-    | GotTileMsg Tile.General.Msg
+    | GotTileMsg Tile.Interface.Msg
 
 
 {-| -}
@@ -158,7 +158,7 @@ update msg article =
 
 {-| Mosaic constructs the `Appearance` viewModel.
 -}
-view : Tile.General.Appearance (Msg -> msg) -> Article -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
+view : Tile.Interface.Appearance (Msg -> msg) -> Article -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
 view appearance article =
     let
         face =
@@ -173,7 +173,7 @@ view appearance article =
                 |> on key
     in
     case appearance of
-        Tile.General.Normal ->
+        Tile.Interface.Normal ->
             Gui.collapsed_document face
                 []
                 [ toolbar_placeholder
@@ -187,7 +187,7 @@ view appearance article =
                 --|> Debug.log ("normal custom editor node ("++article.release++")")
                 ]
 
-        Tile.General.Selected ->
+        Tile.Interface.Selected ->
             Gui.collapsed_document face
                 []
                 [ toolbar_placeholder
@@ -201,7 +201,7 @@ view appearance article =
                 --|> Debug.log ("selected or focused custom editor node ("++article.release++")")
                 ]
 
-        Tile.General.Editor how_to_message ->
+        Tile.Interface.Editor how_to_message ->
             Gui.expanded_document face
                 []
                 [ node "custom-editor"

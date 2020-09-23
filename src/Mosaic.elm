@@ -40,11 +40,11 @@ When you drag a tile over another, it may change its internal state. This is det
 
 import Html exposing (Html)
 import Html.Events exposing (..)
-import Tile exposing ( Tile )
+import Tile exposing ( Tile(..) )
 import Zip exposing (Path(..), Zip)
 import Gui exposing (Position, midpoint, Delta, zero)
 
-import Tile.General
+import Tile.Interface
 
 
 
@@ -79,8 +79,8 @@ singleton : Mosaic
 singleton =
     Editing
         { tiles =
-            Zip.singleton Tile.Base
-                |> Zip.insert_right (Tile.Trashcan midpoint |> Deselected)
+            Zip.singleton Tile.base
+                |> Zip.insert_right (Deselected Tile.trashcan )
         , viewport = midpoint
         }
         |> arrange
@@ -213,14 +213,7 @@ manifest_delta a c =
         { a | trace = Gui.new_trace }
         c    
         |> map_each_selected_tile
-            (\tile ->
-                case tile of
-                    Tile.ArticleTile id position article ->
-                        Tile.ArticleTile id ( bake_in position ) article
-                    Tile.Trashcan position ->
-                        Tile.Trashcan ( bake_in position )
-                    _ -> tile
-                )
+            (\(Tile pos kind) -> (Tile (bake_in pos) kind))
 
 {-|-}
 add_article : String -> Mosaic -> Mosaic
@@ -428,20 +421,20 @@ view mosaic =
                 >>-} wrap
 
         draw_focused_tile =
-            Tile.view ( Tile.General.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
                 >> edit_or_drag
                 >> Gui.view
                     ( Gui.Focused AssertFocus )
 
         draw_selected_tile path =
-            Tile.view ( Tile.General.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
                 >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
                 >> edit_or_drag
                 >> Gui.view 
                     ( Gui.Selected ( Deselect path ) ( Walk (Zip.int_to_path path) ) )
 
         draw_deselected_tile path =
-            Tile.view ( Tile.General.appearance GotTileMsg { selected = False, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = False, editing = is_editing mosaic } )
                 >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
                 >> wrap
                 >> Gui.view

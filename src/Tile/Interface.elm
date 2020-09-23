@@ -1,4 +1,4 @@
-module Tile.General exposing 
+module Tile.Interface exposing 
     ( Msg(..)
     , Appearance(..)
     , appearance

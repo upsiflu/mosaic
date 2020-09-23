@@ -1,6 +1,6 @@
 module Tile exposing 
     ( Tile (..)
-    , article
+    , article, base, trashcan
     , position
     , midpoint
     , Msg (..)
@@ -21,7 +21,7 @@ module Tile exposing
 -}
 
 import Tile.Article as Article
-import Tile.General as General
+import Tile.Interface as Interface
 import Gui exposing (Position)
 
 
@@ -30,33 +30,42 @@ import Gui exposing (Position)
 {-| Holds local data of the tile
 -}
 type Tile
-    = ArticleTile Int Position Article.Article
-      --| LayoutTile Position Layout
-      --| EntranceTile Position String
-    | Trashcan Position
-    | Base
+    = Tile Position Kind
 
+type Kind
+    = Article {id: Int, data: Article.Article}
+    | Trashcan
+    | Base
 
 {-|-}
 article : String -> Int -> Position -> Tile
 article contents id pos =
-    Article.singleton contents
-        |> ArticleTile id pos
+    Article { id = id, data = Article.singleton contents }
+        |> Tile pos
+
+{-|-}
+base : Tile
+base = Tile midpoint Base
+
+{-|-}
+trashcan : Tile
+trashcan = Tile midpoint Trashcan
 
 {-|-}
 type Msg
-    -- Articles
     = GotArticleMsg Int Article.Msg
 
 {-|-}
 update : Msg -> Tile -> Tile
-update msg tile =
-    case ( msg, tile ) of
-        ( GotArticleMsg key message, ArticleTile id pos art )->
-            if key == id 
-            then ArticleTile id pos <| Article.update message art 
-            else tile
-        _ -> tile
+update msg (Tile pos kind) =
+    ( case ( msg, kind ) of
+        ( GotArticleMsg key message, Article parameters ) ->
+            ( if key == parameters.id 
+                then { parameters | data = Article.update message parameters.data }
+                else parameters
+            ) |> Article
+        _ -> kind
+    ) |> Tile pos
 
 {-|-}
 midpoint : Position
@@ -64,16 +73,8 @@ midpoint =
     Position 0 0
 {-|-}
 position : Tile -> Position
-position tile =
-    case tile of
-        ArticleTile _ p _ ->
-            p
-
-        Trashcan p ->
-            p
-
-        _ ->
-            midpoint
+position (Tile pos _) =
+    pos
 
 
 
@@ -81,21 +82,26 @@ position tile =
 
 
 {-|-}
-view : General.Appearance ( Msg -> msg ) -> Tile -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
-view appearance tile =
+view : Interface.Appearance ( Msg -> msg ) -> Tile -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
+view appearance (Tile pos kind) =
     let mediate_article_message : Int -> (Article.Msg -> Msg)
         mediate_article_message = GotArticleMsg
+        inner = 
+            case kind of
+                Article parameters ->
+                    parameters.data 
+                        |> Article.view (appearance |> Interface.map_appearance ( mediate_article_message parameters.id ) ) 
+                        |> Gui.with_info (String.fromInt parameters.id |> Gui.literal )
+                Trashcan ->
+                    Gui.collapsed_document (Gui.icon "Trashcan. Move Stuff in here to hide it from the public." "delete") [] []
+                Base -> 
+                    Gui.collapsed_document (Gui.icon "Canvas!" "aspect_ratio") [] []
+
     in
-    Gui.with_class "tile"
-        <| Gui.with_position ( position tile )
-        <| case tile of
-            ArticleTile id _ art ->
-                art |> Article.view (General.map_appearance ( mediate_article_message id ) appearance) 
-                    |> Gui.with_info (Gui.literal <| String.fromInt id)
-            Trashcan _ ->
-                Gui.collapsed_document (Gui.icon "Trashcan. Move Stuff in here to hide it from the public." "delete") [] []
-            Base -> 
-                Gui.collapsed_document (Gui.icon "Canvas!" "aspect_ratio") [] []
+    inner
+        |> Gui.with_position pos
+        |> Gui.with_class "tile"
+            
 
 
 
