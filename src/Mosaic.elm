@@ -12,18 +12,11 @@ module Mosaic exposing
 
 {-| holds a zip of Tiles.
 
-One of the tiles is the `Focused Tile`, the others are `Peripheral Tiles`.
+One of the tiles is the `Focused Til`e, the others are `Peripheral Tile`s. 
+The Focused tile is always selected, whereas the Peripheral tiles can individually be selected or deselected.
 
-The Focused Tile is always selected, whereas the Peripheral Tiles can individually be selected or deselected.
-
-The Mosaic has two states.
-In `Editing` mode, the selected Tiles present an Active view.
-In `Arranging` mode, the selected Tiles present a Static view, 
-i.e. they don't handle any interaction.
-In this mode, the selected Tiles (including the Focused Tile) can be dragged, 
-always in unison.
-
-When you drag a tile over another, it may change its internal state. This is determined by the concrete tile's module.
+Although the focus and selection states of the tiles only apply in the context of a mosaic, this module can't provide the corresponding types because
+that would result in a circular import. This is why I added an `Interface` module to the Tiles which handles mosaic-related messages and states.
 
 @docs Mosaic, singleton
 
@@ -40,9 +33,10 @@ When you drag a tile over another, it may change its internal state. This is det
 
 import Html exposing (Html)
 import Html.Events exposing (..)
-import Tile exposing ( Tile(..) )
+import Tile exposing ( Tile, Contents(..) )
+import Tile.Hypertext
 import Zip exposing (Path(..), Zip)
-import Gui exposing (Position, midpoint, Delta, zero)
+import Gui exposing (Position, midpoint, Delta, add_delta, zero)
 
 import Tile.Interface
 
@@ -79,8 +73,9 @@ singleton : Mosaic
 singleton =
     Editing
         { tiles =
-            Zip.singleton Tile.base
-                |> Zip.insert_right (Deselected Tile.trashcan )
+            Tile.singleton Base
+                |> Zip.singleton 
+                |> Zip.insert_right (Tile.singleton Trashcan |> Deselected )
         , viewport = midpoint
         }
         |> arrange
@@ -207,13 +202,11 @@ update msg mosaic =
 
 manifest_delta : Arrangement -> Composition -> Mosaic
 manifest_delta a c =
-    let bake_in = Gui.add_delta (Gui.final_delta a.trace)
-    in
     Arranging
         { a | trace = Gui.new_trace }
         c    
         |> map_each_selected_tile
-            (\(Tile pos kind) -> (Tile (bake_in pos) kind))
+            (add_delta (Gui.final_delta a.trace) |> Tile.map_position)
 
 {-|-}
 add_article : String -> Mosaic -> Mosaic
@@ -221,15 +214,17 @@ add_article contents mosaic =
     mosaic
         |> map_tiles
             (Zip.insert_right
-                (Tile.article contents (size mosaic) ( Tile.midpoint |> Gui.add_delta {x = (size mosaic - 2) * 10, y = (size mosaic - 2) * 100 + 70})
+                ( Article { id = length mosaic, data = Tile.Hypertext.singleton contents }
+                    |> Tile.singleton 
+                    |> Tile.map_position (add_delta {x = (length mosaic - 2) * 10, y = (length mosaic - 2) * 100 + 70})
                     |> Deselected
                 )
             )
         |> walk (R Here)
 
 
-size : Mosaic -> Int
-size mosaic =
+length : Mosaic -> Int
+length mosaic =
     case mosaic of
         Arranging _ c ->
             Zip.length c.tiles
@@ -337,7 +332,7 @@ subscriptions _ =
 C   CLIPBOARD   ------------------------------------------------------------------------------  To Do.
 
 C   CONTENTS
-    - Draw                    Contents                       Appearance : Normal | Selected | Interactive how_to_message
+    - Draw                    Contents                       Mode : Normal | Selected | Editor how_to_message
 
 D   DELTA
     * Move      Drag          Overlay Fill        Not Editing&Selected; not Backdrop.
@@ -421,20 +416,20 @@ view mosaic =
                 >>-} wrap
 
         draw_focused_tile =
-            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.mode GotTileMsg { selected = True, editing = is_editing mosaic } )
                 >> edit_or_drag
                 >> Gui.view
                     ( Gui.Focused AssertFocus )
 
         draw_selected_tile path =
-            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = True, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.mode GotTileMsg { selected = True, editing = is_editing mosaic } )
                 >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
                 >> edit_or_drag
                 >> Gui.view 
                     ( Gui.Selected ( Deselect path ) ( Walk (Zip.int_to_path path) ) )
 
         draw_deselected_tile path =
-            Tile.view ( Tile.Interface.appearance GotTileMsg { selected = False, editing = is_editing mosaic } )
+            Tile.view ( Tile.Interface.mode GotTileMsg { selected = False, editing = is_editing mosaic } )
                 >> Gui.with_info (Gui.literal (String.fromInt path) |> Gui.with_hint "path")
                 >> wrap
                 >> Gui.view
@@ -520,7 +515,7 @@ offset mosaic = mosaic |> always []
            case tile of
                ArticleTile id p article ->
                    article
-                       |> Article.view
+                       |> Hypertext.view
                            ( class "tile"
                                :: position p
                                ++ outer_attributes

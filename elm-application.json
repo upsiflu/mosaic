@@ -6,8 +6,8 @@
         "Gui",
         "Mosaic",
         "Tile",
-        "Tile.General",
-        "Tile.Article",
+        "Tile.Interface",
+        "Tile.Hypertext",
         "Zip"
     ]
 }

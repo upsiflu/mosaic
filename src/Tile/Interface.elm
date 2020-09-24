@@ -1,14 +1,15 @@
 module Tile.Interface exposing 
     ( Msg(..)
-    , Appearance(..)
-    , appearance
-    , map_appearance)
+    , Mode(..)
+    , mode
+    , map_mode)
 
-{-| Stateless (interface) module for all Tiles.
+{-| Selection and Focus are relations of a `Mosaic` towards an instanciated `Tile`.
+This module is separate from the Mosaic module so that the Tile module as well as its contents can import the types and functions and differenciate its `view`.
+
+@docs Mode, mode, map_mode
+
 @docs Msg
-
-# Appearance
-@docs Appearance, appearance, map_appearance
 -}
 
 {-|-}
@@ -17,17 +18,17 @@ type Msg
     | WalkedHere
 
 
-{-| The three available appearances when viewing a tile 
+{-| The three available modes when viewing a tile 
 in a context such as the mosaic.
 -}
-type Appearance how_to_message
+type Mode how_to_message
     = Normal
     | Selected
     | Editor how_to_message
 
-{-| Calculates how a Tile appears, given a set of conditions. -}
-appearance : (specific -> general) -> { selected : Bool, editing : Bool } -> Appearance (specific -> general)
-appearance how_to_message conditions
+{-| a Tile's Mode, given a message transformer and a set of conditions. -}
+mode : (specific -> general) -> { selected : Bool, editing : Bool } -> Mode (specific -> general)
+mode how_to_message conditions
     = case ( conditions.selected, conditions.editing ) of
         ( False, _ ) -> 
             Normal
@@ -37,9 +38,9 @@ appearance how_to_message conditions
             Editor how_to_message
 
 {-|-}
-map_appearance : (specific -> intermediate) -> Appearance (intermediate-> general) -> Appearance (specific -> general)
-map_appearance fu intermediate_appearance =
-    case intermediate_appearance of
+map_mode : (specific -> intermediate) -> Mode (intermediate-> general) -> Mode (specific -> general)
+map_mode fu intermediate_mode =
+    case intermediate_mode of
         Editor how_to_message -> Editor (fu >> how_to_message )
         Selected -> Selected
         Normal -> Normal

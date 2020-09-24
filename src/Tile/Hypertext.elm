@@ -1,5 +1,5 @@
-module Tile.Article exposing
-    ( Article, singleton
+module Tile.Hypertext exposing
+    ( Hypertext, singleton
     , update
     , view
     , Msg
@@ -7,12 +7,9 @@ module Tile.Article exposing
 
 {-|
 
-@docs Article, singleton
+TODO: the size, delta, and pointer events should all transition to Tile.
 
-
-# Data types
-
-@docs Caret, Draft, Format
+@docs Hypertext, singleton
 
 
 # Update
@@ -26,7 +23,7 @@ module Tile.Article exposing
 
 -}
 
-import Gui
+import Gui exposing (On)
 import Json.Decode as Decode exposing (index, int, list, map2, string)
 import Json.Decode.Pipeline exposing (requiredAt)
 import Tile.Interface
@@ -34,9 +31,21 @@ import W3.Html exposing (Event, div, node, on, text)
 import W3.Html.Attributes exposing (attribute, class)
 
 
-{-| -}
-type alias Article =
-    -- Shadows (state held by the JS cusom element)
+{-|
+
+**Attributes** are managed by Elm, synchronized through the `view` cycle, and may be superseded on the JS side by recent user input:
+
+
+
+- `release` (the contents of the article);
+- `format` (the most recent formatting command issued through the toolbar)
+
+**Shadows** are managed on the JS side and synchronized via custom events:
+
+- `draft` (the momentary editor contents);
+- `caret` (the style properties at the momentary user cursor or selection)-}
+type alias Hypertext =
+    -- Shadows (state held by the JS cusom element and sent through custom events)
     { draft : Draft
     , caret : Caret
     , size : Vector
@@ -49,7 +58,7 @@ type alias Article =
 
 
 {-| -}
-singleton : String -> Article
+singleton : String -> Hypertext
 singleton s =
     -- Events
     { draft = Draft s
@@ -120,7 +129,7 @@ type
 
 
 {-| -}
-update : Msg -> Article -> Article
+update : Msg -> Hypertext -> Hypertext
 update msg article =
     case msg of
         -- Events
@@ -156,13 +165,13 @@ update msg article =
             article
 
 
-{-| Mosaic constructs the `Appearance` viewModel.
+{-| Mosaic constructs the `Mode` viewModel.
 -}
-view : Tile.Interface.Appearance (Msg -> msg) -> Article -> Gui.Document { mode | expanded : Gui.Mode, collapsed : Gui.Mode } msg
-view appearance article =
+view : Tile.Interface.Mode (Msg -> msg) -> Hypertext -> Gui.Document { mode | expanded : On, collapsed : On } msg
+view mode article =
     let
         face =
-            Gui.icon "Article" "text_fields"
+            Gui.icon "Hypertext" "text_fields"
 
         toolbar_placeholder =
             div [ class [ "toolbar" ] ] []
@@ -172,7 +181,7 @@ view appearance article =
                 |> Decode.map (\result -> Event (message result) False False)
                 |> on key
     in
-    case appearance of
+    case mode of
         Tile.Interface.Normal ->
             Gui.collapsed_document face
                 []

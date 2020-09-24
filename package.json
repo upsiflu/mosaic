@@ -1,5 +1,5 @@
 {
-  "name": "editor",
+  "name": "mosaic",
   "version": "1.0.0",
   "description": "This project is bootstrapped with [Create Elm App](https://github.com/halfzebra/create-elm-app).",
   "main": "index.js",
@@ -13,8 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@github/image-crop-element": "^3.0.8",
     "draggabilly": "^2.3.0",
+    "jQuery": "^1.7.4",
     "jquery": "^3.5.1"
   }
 }

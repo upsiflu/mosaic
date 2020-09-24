@@ -2,7 +2,7 @@ module Gui exposing
     ( Item(..), nest_collapsed, nest_expanded, view
     , Document(..), collapsed_document, expanded_document
     , with_toolbar, with_position, with_delta, with_draggability, with_attributes, with_class, with_info
-    , Mode, State(..), Control(..), Toolbar, toolbar
+    , On, State(..), Control(..), Toolbar, toolbar
     , Face, icon, literal, sample, with_hint, view_face
     , Position, midpoint, add_delta, Delta, zero, running_delta, final_delta, DragTrace(..), new_trace
     )
@@ -10,14 +10,15 @@ module Gui exposing
 {-| Compose a stateless UI in the `view` phase, based on W3.Aria.
 
 
-# Create and view nested Items
+## Create and view nested `Item`s
 
-@docs Item, nest_collapsed, nest_expanded, view
+@docs Item
 
 
-# Add content through Documents
+## Add editable `Document`s
 
-@docs Document, collapsed_document, expanded_document
+@docs Document, State, On, collapsed_document,  nest_collapsed, expanded_document, nest_expanded, view
+
 
 
 ## Decorate a Document
@@ -25,17 +26,17 @@ module Gui exposing
 @docs with_toolbar, with_position, with_delta, with_draggability, with_attributes, with_class, with_info
 
 
-# Interactivity
+## Interactivity
 
-@docs Mode, State, Control, Toolbar, toolbar
+@docs Control, Toolbar, toolbar
 
 
-# Faces
+## Faces
 
 @docs Face, icon, literal, sample, with_hint, view_face
 
 
-# Positioning and tracing
+## Positioning and tracing
 
 @docs Position, midpoint, add_delta, Delta, zero, running_delta, final_delta, DragTrace, new_trace
 
@@ -62,7 +63,7 @@ type Item msg
 
 {-| composes a Document.
 -}
-nest_expanded : Document { mode | expanded : Mode } msg -> Item msg
+nest_expanded : Document { mode | expanded : On } msg -> Item msg
 nest_expanded (Document face attributes contents) =
     Item face
         (Aria.document [ expanded (Just True) ] attributes)
@@ -71,7 +72,7 @@ nest_expanded (Document face attributes contents) =
 
 {-| composes a Document behind an `overlay`.
 -}
-nest_collapsed : { how_to_expand : msg, controls : List (Control msg) } -> Document { mode | collapsed : Mode } msg -> Item msg
+nest_collapsed : { how_to_expand : msg, controls : List (Control msg) } -> Document { mode | collapsed : On } msg -> Item msg
 nest_collapsed overlay (Document face attributes contents) =
     Item face
         (Aria.document [ expanded (Just False) ] (ondblclick overlay.how_to_expand :: attributes))
@@ -118,10 +119,10 @@ view state (Item face attributes contents) =
         |> toNode
 
 
-{-| Data type for extensible parameter records.
+{-| Unit type for extensible parameter records in phantom types.
 -}
-type Mode
-    = Mode
+type On
+    = On
 
 
 {-| -}
@@ -129,6 +130,12 @@ type State msg
     = Deselected msg msg
     | Selected msg msg
     | Focused msg
+
+
+
+
+
+
 
 
 {-| -}
@@ -249,7 +256,8 @@ view_face (Face description descendant) =
     span [ class [ "face" ], title description ] [ descendant ]
 
 
-{-| To limit certain functions on subsets of the Document type, `mode` provides a flexible phantom type parameter.
+{-| To limit certain functions on subsets of the Document type, `mode` provides a flexible phantom type parameter 
+(an extensible record with options that are `On`).
 -}
 type Document mode msg
     = Document (Face msg) (List (GlobalAttributes {} msg)) (List (Node FlowContent msg))
@@ -260,13 +268,13 @@ type Document mode msg
 
 
 {-| -}
-collapsed_document : Face msg -> List (GlobalAttributes {} msg) -> List (Node FlowContent msg) -> Document { mode | collapsed : Mode } msg
+collapsed_document : Face msg -> List (GlobalAttributes {} msg) -> List (Node FlowContent msg) -> Document { mode | collapsed : On } msg
 collapsed_document =
     Document
 
 
 {-| -}
-expanded_document : Face msg -> List (GlobalAttributes {} msg) -> List (Node FlowContent msg) -> Document { mode | expanded : Mode } msg
+expanded_document : Face msg -> List (GlobalAttributes {} msg) -> List (Node FlowContent msg) -> Document { mode | expanded : On } msg
 expanded_document =
     Document
 
@@ -276,7 +284,7 @@ expanded_document =
 
 
 {-| -}
-with_toolbar : Toolbar msg -> Document { mode | expanded : Mode } msg -> Document { mode | expanded : Mode } msg
+with_toolbar : Toolbar msg -> Document { mode | expanded : On } msg -> Document { mode | expanded : On } msg
 with_toolbar t (Document face attributes contents) =
     Document face attributes (t :: contents)
 
@@ -306,7 +314,7 @@ with_delta { x, y } =
 
 
 {-| -}
-with_info : Face msg -> Document { mode | expanded : Mode } msg -> Document { mode | expanded : Mode } msg
+with_info : Face msg -> Document { mode | expanded : On } msg -> Document { mode | expanded : On } msg
 with_info info (Document face attributes contents) =
     Document face attributes (span [ class [ "gui", "info" ] ] [ view_face info ] :: contents)
 
