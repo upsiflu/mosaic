@@ -76,7 +76,7 @@ article button {
 }
 
   /* Debug: Main, Secondary and Baseline Grid. */
-  --suspended-- .editor-box:hover:before {
+  .SUSPENDED .editor-box:hover:before {
       text-align: right;
       position: absolute;
       left: 0; top: 0;
